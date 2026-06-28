@@ -23,7 +23,7 @@
 {% endmacro %}
 {% block content %}
 <section class="page-head compact">
-  <p class="eyebrow">Fight history graph</p>
+  <p class="eyebrow">Fight history</p>
   <h1>Fighter defeat tree</h1>
   <p>Pick a fighter to expand the chain of opponents they defeated, then follow each defeated fighter's own wins as nested branches.</p>
 </section>
@@ -40,9 +40,8 @@
   </form>
   {% if fight_result_count == 0 %}
     <div class="empty-state">
-      <h2>No fight-result edges imported yet.</h2>
-      <p>Import a bout-history CSV or connector with winner and loser fields to populate this navigable defeat tree.</p>
-      <code>python scripts/import_fight_results.py path/to/fights.csv</code>
+      <h2>Fight history is being prepared.</h2>
+      <p>Opponent chains will appear here as verified bout history becomes available.</p>
     </div>
   {% elif tree %}
     <div class="tree-shell">

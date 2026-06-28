@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="result">
-  <p class="eyebrow">Model prediction</p>
+  <p class="eyebrow">Matchup outlook</p>
   <h1>{{ result.winner }}</h1>
   <p class="lede">Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</p>
   <div class="probabilities">
@@ -23,10 +23,10 @@
   <a class="button" href="/predict">Run another analysis</a>
 </section>
 <section class="band">
-  <h2>Feature differences</h2>
+  <h2>Matchup factors</h2>
   <div class="feature-table">
     {% for key, value in result.features.items() %}
-      <div><span>{{ key }}</span><strong>{{ value | round(3) }}</strong></div>
+      <div><span>{{ key | replace("_", " ") | title }}</span><strong>{{ value | round(3) }}</strong></div>
     {% endfor %}
   </div>
 </section>

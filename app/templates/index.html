@@ -4,7 +4,7 @@
   <div>
     <p class="eyebrow">MMA matchup intelligence</p>
     <h1>Project fighter outcomes from a richer view of each matchup.</h1>
-    <p class="lede">Compare fighters using profile metrics, recent form, striking pace, grappling tendencies, and defensive indicators. The app combines MMA data feeds into one clean feature set for each fighter.</p>
+    <p class="lede">Compare fighters using roster context, recent form, striking pace, grappling tendencies, and defensive indicators.</p>
     <div class="actions">
       {% if user %}
         <a class="button" href="/predict">Analyze a fight</a>
@@ -15,59 +15,42 @@
     </div>
   </div>
 </section>
-<section class="api-band">
-  <div class="api-callout">
-    <div>
-      <p class="eyebrow">Public API</p>
-      <h2>Query fighters and run matchup predictions from your own tools.</h2>
-      <p>Developers can list fighter profiles, fetch model inputs, and call the prediction endpoint with two fighter IDs.</p>
-    </div>
-    <div class="api-snippet">
-      <code>POST /api/v1/predict</code>
-      <pre>{
-  "fighter_a_id": 1,
-  "fighter_b_id": 2
-}</pre>
-    </div>
-    <a class="button secondary" href="/api-docs">View API docs</a>
-  </div>
-</section>
 <section class="feed-band">
   <div class="feed-overview">
     <div>
-      <p class="eyebrow">Feeds incorporated</p>
-      <h2>Live APIs and baseline files flow into one feature layer.</h2>
-      <p>Recent imports combine fighter records, supplemental scouting context, and current market odds into sourced external features that can be promoted into the prediction model as coverage becomes complete.</p>
+      <p class="eyebrow">Coverage</p>
+      <h2>Roster, market, and scouting context in one fight view.</h2>
+      <p>The portal brings together fighter records, odds movement, activity, rankings, and scouting context so each matchup can be reviewed from multiple angles.</p>
     </div>
-    <div class="feed-stats" aria-label="Imported data totals">
-      <div><strong>4</strong><span>Configured feeds</span></div>
-      <div><strong>{{ "{:,}".format(counts.imported_names) }}</strong><span>Imported fighter names</span></div>
-      <div><strong>{{ "{:,}".format(counts.external_features) }}</strong><span>External feature values</span></div>
+    <div class="feed-stats" aria-label="Coverage totals">
+      <div><strong>4</strong><span>Coverage areas</span></div>
+      <div><strong>{{ "{:,}".format(counts.imported_names) }}</strong><span>Fighters tracked</span></div>
+      <div><strong>{{ "{:,}".format(counts.external_features) }}</strong><span>Scouting signals</span></div>
     </div>
   </div>
-  <div class="feed-map" aria-label="Data feeds incorporated">
+  <div class="feed-map" aria-label="Coverage incorporated">
     <article class="feed-node live">
-      <span class="feed-kind">Live API</span>
-      <h3>BALLDONTLIE MMA</h3>
-      <p>Fighter directory records imported into the wide feature store.</p>
+      <span class="feed-kind">Roster</span>
+      <h3>Fighter Coverage</h3>
+      <p>Division, record, physical attributes, and status information across the active roster.</p>
     </article>
     <article class="feed-node live">
-      <span class="feed-kind">Live API</span>
-      <h3>The Odds API</h3>
-      <p>Current MMA moneyline markets imported for matchup context.</p>
+      <span class="feed-kind">Markets</span>
+      <h3>Odds Context</h3>
+      <p>Current moneyline context for upcoming matchups and market movement.</p>
     </article>
     <article class="feed-node base">
-      <span class="feed-kind">Baseline</span>
-      <h3>Sample fighter profiles</h3>
-      <p>Prediction-ready profiles with complete model inputs.</p>
+      <span class="feed-kind">Matchup</span>
+      <h3>Fight Indicators</h3>
+      <p>Size, reach, experience, pace, finishing ability, and defensive tendencies.</p>
     </article>
     <article class="feed-node base">
-      <span class="feed-kind">Supplemental</span>
-      <h3>Scouting feature file</h3>
+      <span class="feed-kind">Scouting</span>
+      <h3>Fighter Notes</h3>
       <p>Stance, camp, rank, Elo, activity, injury, and short-notice flags.</p>
     </article>
     <div class="feature-core">
-      <span>Normalized feature layer</span>
+      <span>Matchup view</span>
     </div>
   </div>
 </section>
@@ -75,56 +58,56 @@
   <div class="promotion-head">
     <p class="eyebrow">Promotion coverage</p>
     <h2>Built to reconcile fighters across major MMA organizations.</h2>
-    <p>Current live feeds identify MMA-wide fighter and odds records. Promotion-specific attribution is tracked as source providers expose it, with the catalog ready for promotion-aware imports.</p>
+    <p>The roster is structured to support promotion-aware browsing and analysis as coverage expands across major organizations.</p>
   </div>
   <div class="promotion-grid" aria-label="Supported MMA promotion coverage">
     <div class="promotion-card">
       <span class="promotion-mark mark-ufc" aria-hidden="true">UFC</span>
-      <strong>UFC</strong><span>Live odds coverage</span>
+      <strong>UFC</strong><span>Market coverage</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-bellator" aria-hidden="true">BEL</span>
-      <strong>Bellator</strong><span>Catalog ready</span>
+      <strong>Bellator</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-pfl" aria-hidden="true">PFL</span>
-      <strong>PFL</strong><span>Catalog ready</span>
+      <strong>PFL</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-one" aria-hidden="true">ONE</span>
-      <strong>ONE</strong><span>Catalog ready</span>
+      <strong>ONE</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-rizin" aria-hidden="true">RZ</span>
-      <strong>RIZIN</strong><span>Catalog ready</span>
+      <strong>RIZIN</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-cage-warriors" aria-hidden="true">CW</span>
-      <strong>Cage Warriors</strong><span>Catalog ready</span>
+      <strong>Cage Warriors</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-lfa" aria-hidden="true">LFA</span>
-      <strong>LFA</strong><span>Catalog ready</span>
+      <strong>LFA</strong><span>Roster ready</span>
     </div>
     <div class="promotion-card">
       <span class="promotion-mark mark-invicta" aria-hidden="true">IFC</span>
-      <strong>Invicta FC</strong><span>Catalog ready</span>
+      <strong>Invicta FC</strong><span>Roster ready</span>
     </div>
   </div>
 </section>
 <section class="band">
   <div class="grid three">
     <article>
-      <h2>Fighter profiles</h2>
+      <h2>Fighter roster</h2>
       <p>Build each matchup from age, frame, reach, record, finishing rates, takedown metrics, and strike volume.</p>
     </article>
     <article>
-      <h2>Multiple feeds</h2>
-      <p>Source adapters pull public stats, bout history, rankings, odds movement, and recent activity into normalized records.</p>
+      <h2>Coverage depth</h2>
+      <p>Review public stats, fight history, rankings, odds movement, and recent activity together.</p>
     </article>
     <article>
-      <h2>Explainable edge</h2>
-      <p>Predictions show win probabilities and the feature differences driving the model, so a pick can be reviewed instead of blindly trusted.</p>
+      <h2>Transparent read</h2>
+      <p>Matchup outlooks show win probabilities and the factors behind each pick.</p>
     </article>
   </div>
 </section>

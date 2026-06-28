@@ -16,13 +16,12 @@ from app.fighters import (
     fighter_data_counts,
     get_fighter,
     list_fighters,
-    list_imported_fighter_index,
     profile_to_features,
     promote_imported_fighters_to_profiles,
 )
 from app.fight_tree import build_defeat_tree, fight_result_count
 from app.ingestion.connectors import import_catalog, ingestion_counts
-from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls, thumbnail_urls_for_names
+from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
@@ -157,16 +156,13 @@ def fighters_page(
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     fighters = list_fighters(db)
-    imported_fighters = list_imported_fighter_index(db)
     media_urls = fighter_thumbnail_urls(db, fighters)
-    media_urls.update(thumbnail_urls_for_names(db, [fighter["name"] for fighter in imported_fighters]))
     return templates.TemplateResponse(
         request,
         "fighters.html",
         {
             "user": user,
             "fighters": fighters,
-            "imported_fighters": imported_fighters,
             "counts": fighter_data_counts(db),
             "media_urls": media_urls,
         },
@@ -278,7 +274,7 @@ def predict_from_profiles(
             request,
             user,
             db,
-            error="Choose two different fighter profiles.",
+            error="Choose two different fighters.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -289,7 +285,7 @@ def predict_from_profiles(
             request,
             user,
             db,
-            error="One of those fighter profiles could not be found.",
+            error="One of those fighters could not be found.",
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
@@ -436,7 +432,7 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
         "fighter_a": serialize_fighter(profile_a, media_urls[profile_a.name]),
         "fighter_b": serialize_fighter(profile_b, media_urls[profile_b.name]),
         "prediction": result,
-        "note": "Provisional-live-feed profiles may use league-average fallbacks for missing stats.",
+        "note": "Some fighters use estimated values where complete public statistics are unavailable.",
     }
 
 

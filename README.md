@@ -11,6 +11,7 @@ This project is not betting advice. The model output is an experimental probabil
 - Multi-source feed adapters for fighter stats, bout history, rankings, odds movement, and recent activity
 - Normalized matchup features for size, record, finishing rates, wrestling, striking pace, and defensive metrics
 - Open JSON source catalog for importing CSV and JSON feeds with custom field mappings
+- Public JSON API for fighter lookup and matchup predictions
 - Protected app workflow with local development and Docker support
 - MIT licensed and ready for GitHub
 
@@ -84,6 +85,17 @@ Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local f
 See `LIVE_FEEDS.md` for live API and scraping candidates.
 
 Live API records can expand the raw fighter universe before every fighter is prediction-ready. Prediction-ready fighters still need the complete profile fields used by the model.
+
+## API
+
+The app exposes public JSON endpoints for fighter lookup and model predictions:
+
+```text
+GET /api/v1/fighters
+POST /api/v1/predict
+```
+
+See `API.md` or `/api-docs` in the running app for examples.
 
 ## Fighter Profiles
 

@@ -2,7 +2,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from fastapi import Depends, FastAPI, Form, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -74,6 +74,11 @@ def redirect_to_login(request: Request, exc: RedirectToLogin) -> RedirectRespons
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, user: User | None = Depends(current_user)) -> HTMLResponse:
     return templates.TemplateResponse(request, "index.html", {"user": user})
+
+
+@app.get("/api-docs", response_class=HTMLResponse)
+def api_docs(request: Request, user: User | None = Depends(current_user)) -> HTMLResponse:
+    return templates.TemplateResponse(request, "api_docs.html", {"user": user})
 
 
 @app.get("/register", response_class=HTMLResponse)
@@ -281,6 +286,81 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/v1/meta")
+def api_meta(db: Session = Depends(get_db)) -> dict[str, object]:
+    counts = fighter_data_counts(db)
+    return {
+        "name": settings.app_name,
+        "version": "v1",
+        "counts": counts,
+        "endpoints": {
+            "fighters": "/api/v1/fighters",
+            "fighter_detail": "/api/v1/fighters/{fighter_id}",
+            "prediction": "/api/v1/predict",
+        },
+    }
+
+
+@app.get("/api/v1/fighters")
+def api_fighters(
+    db: Session = Depends(get_db),
+    search: str | None = Query(default=None, max_length=80),
+    limit: int = Query(default=50, ge=1, le=250),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, object]:
+    fighters = list_fighters(db)
+    if search:
+        lowered = search.lower()
+        fighters = [fighter for fighter in fighters if lowered in fighter.name.lower()]
+    total = len(fighters)
+    page = fighters[offset : offset + limit]
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "fighters": [serialize_fighter(fighter) for fighter in page],
+    }
+
+
+@app.get("/api/v1/fighters/{fighter_id}")
+def api_fighter(fighter_id: int, db: Session = Depends(get_db)) -> dict[str, object]:
+    fighter = get_fighter(db, fighter_id)
+    if fighter is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
+    return serialize_fighter(fighter)
+
+
+@app.post("/api/v1/predict")
+def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[str, object]:
+    fighter_a_id = payload.get("fighter_a_id")
+    fighter_b_id = payload.get("fighter_b_id")
+    if fighter_a_id is None or fighter_b_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Provide fighter_a_id and fighter_b_id.",
+        )
+    if fighter_a_id == fighter_b_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Choose two different fighters.",
+        )
+
+    profile_a = get_fighter(db, fighter_a_id)
+    profile_b = get_fighter(db, fighter_b_id)
+    if profile_a is None or profile_b is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
+
+    fighter_a = profile_to_features(profile_a)
+    fighter_b = profile_to_features(profile_b)
+    result = predictor.predict(fighter_a, fighter_b)
+    return {
+        "fighter_a": serialize_fighter(profile_a),
+        "fighter_b": serialize_fighter(profile_b),
+        "prediction": result,
+        "note": "Provisional-live-feed profiles may use league-average fallbacks for missing stats.",
+    }
+
+
 def render_predict_page(
     request: Request,
     user: User,
@@ -294,3 +374,23 @@ def render_predict_page(
         {"user": user, "error": error, "fighters": list_fighters(db)},
         status_code=status_code,
     )
+
+
+def serialize_fighter(fighter: object) -> dict[str, object]:
+    return {
+        "id": fighter.id,
+        "name": fighter.name,
+        "weight_class": fighter.weight_class,
+        "age": fighter.age,
+        "height_cm": fighter.height_cm,
+        "reach_cm": fighter.reach_cm,
+        "wins": fighter.wins,
+        "losses": fighter.losses,
+        "ko_rate": fighter.ko_rate,
+        "submission_rate": fighter.submission_rate,
+        "takedown_accuracy": fighter.takedown_accuracy,
+        "takedown_defense": fighter.takedown_defense,
+        "strikes_landed_per_min": fighter.strikes_landed_per_min,
+        "strikes_absorbed_per_min": fighter.strikes_absorbed_per_min,
+        "source": fighter.source,
+    }

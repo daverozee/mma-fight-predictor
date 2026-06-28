@@ -82,3 +82,23 @@ def test_seeded_fighter_profiles_can_drive_prediction() -> None:
         )
         assert response.status_code == 200
         assert "Model prediction" in response.text
+
+
+def test_public_api_lists_fighters_and_predicts() -> None:
+    with TestClient(app) as client:
+        response = client.get("/api/v1/fighters?limit=2")
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["total"] >= 2
+        assert len(payload["fighters"]) == 2
+
+        fighter_a = payload["fighters"][0]["id"]
+        fighter_b = payload["fighters"][1]["id"]
+        response = client.post(
+            "/api/v1/predict",
+            json={"fighter_a_id": fighter_a, "fighter_b_id": fighter_b},
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["prediction"]["winner"]
+        assert 0 <= result["prediction"]["probability_a"] <= 1

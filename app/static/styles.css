@@ -194,6 +194,77 @@ button {
   background: #fff;
 }
 
+.api-band {
+  border-top: 1px solid var(--line);
+  padding: 38px clamp(18px, 4vw, 56px);
+  background: #fff;
+}
+
+.api-callout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.api-callout h2 {
+  max-width: 660px;
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.api-callout p {
+  max-width: 680px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.api-snippet,
+.api-grid article,
+.code-block {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+.api-snippet {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.api-snippet code,
+.api-grid code {
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.api-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.code-block {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
 .promotion-head,
 .promotion-grid {
   max-width: 1100px;
@@ -585,7 +656,9 @@ legend {
   .feed-stats,
   .feed-map,
   .promotion-grid,
-  .imported-fighter-row {
+  .imported-fighter-row,
+  .api-callout,
+  .api-grid {
     grid-template-columns: 1fr;
   }
 

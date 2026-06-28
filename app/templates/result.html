@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="result">
+  <p class="eyebrow">Model prediction</p>
+  <h1>{{ result.winner }}</h1>
+  <p class="lede">Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</p>
+  <div class="probabilities">
+    <div>
+      <span>{{ fighter_a.name }}</span>
+      <strong>{{ (result.probability_a * 100) | round(1) }}%</strong>
+    </div>
+    <div>
+      <span>{{ fighter_b.name }}</span>
+      <strong>{{ (result.probability_b * 100) | round(1) }}%</strong>
+    </div>
+  </div>
+  <a class="button" href="/predict">Run another analysis</a>
+</section>
+<section class="band">
+  <h2>Feature differences</h2>
+  <div class="feature-table">
+    {% for key, value in result.features.items() %}
+      <div><span>{{ key }}</span><strong>{{ value | round(3) }}</strong></div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

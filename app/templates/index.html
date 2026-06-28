@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Open source MMA analytics</p>
+    <h1>Compare two fighters with a trainable machine learning model.</h1>
+    <p class="lede">Create an account, enter matchup features, and get a winner estimate with probabilities. The starter model is intentionally simple so the data pipeline can evolve in public.</p>
+    <div class="actions">
+      {% if user %}
+        <a class="button" href="/predict">Analyze a fight</a>
+      {% else %}
+        <a class="button" href="/register">Create account</a>
+        <a class="button secondary" href="/login">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<section class="band">
+  <div class="grid three">
+    <article>
+      <h2>Authenticated</h2>
+      <p>Sessions, signup, login, and protected analysis pages are wired in from the first commit.</p>
+    </article>
+    <article>
+      <h2>Trainable</h2>
+      <p>The prediction layer uses scikit-learn and can be retrained as stronger fighter and bout data arrives.</p>
+    </article>
+    <article>
+      <h2>Deployable</h2>
+      <p>Docker local hosting keeps the development environment close to an affordable cloud deployment.</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

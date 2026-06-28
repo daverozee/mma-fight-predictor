@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head compact">
+  <p class="eyebrow">Seeded profile library</p>
+  <h1>Fighter profiles</h1>
+  <p>Use these baseline profiles for quick predictions, then replace or extend the CSV as better sourced data arrives.</p>
+</section>
+<section class="band">
+  <div class="fighter-table">
+    <div class="fighter-row header">
+      <span>Name</span>
+      <span>Class</span>
+      <span>Record</span>
+      <span>Reach</span>
+      <span>SLpM</span>
+      <span>SApM</span>
+    </div>
+    {% for fighter in fighters %}
+      <div class="fighter-row">
+        <strong>{{ fighter.name }}</strong>
+        <span>{{ fighter.weight_class }}</span>
+        <span>{{ fighter.wins | int }}-{{ fighter.losses | int }}</span>
+        <span>{{ fighter.reach_cm | round(1) }} cm</span>
+        <span>{{ fighter.strikes_landed_per_min | round(1) }}</span>
+        <span>{{ fighter.strikes_absorbed_per_min | round(1) }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="actions">
+    <a class="button" href="/predict">Analyze matchup</a>
+  </div>
+</section>
+{% endblock %}

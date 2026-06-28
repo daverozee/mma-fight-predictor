@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title or "MMA Fight Predictor" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">MMA Fight Predictor</a>
+      <nav>
+        {% if user %}
+          <a href="/dashboard">Dashboard</a>
+          <a href="/fighters">Fighters</a>
+          <a href="/predict">Predict</a>
+          <form method="post" action="/logout">
+            <button type="submit" class="link-button">Logout</button>
+          </form>
+        {% else %}
+          <a href="/login">Login</a>
+          <a class="button small" href="/register">Create account</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

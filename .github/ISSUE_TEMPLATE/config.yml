@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Responsible data reminder
+    url: https://docs.github.com/en/site-policy
+    about: Review platform policy and data-source terms before proposing scraping or ingestion work.

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: mma-fight-predictor
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: APP_NAME
+        value: MMA Fight Predictor
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:////app/storage/app.db
+      - key: MODEL_PATH
+        value: /app/storage/model.joblib
+      - key: PORT
+        value: 10000
+    disk:
+      name: app-storage
+      mountPath: /app/storage
+      sizeGB: 1

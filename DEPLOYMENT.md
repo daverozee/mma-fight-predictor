@@ -12,10 +12,20 @@ The `storage/` directory is mounted into the container so the SQLite database an
 
 ## Affordable Cloud Options
 
-- Render: simple Docker deploys, managed Postgres, easy GitHub integration.
+- Render: recommended for today's forum demo. The included `render.yaml` deploys the Docker app with a persistent disk for SQLite signups and model storage.
 - Fly.io: good Docker support and regional deployment, slightly more operational detail.
 - Railway: very quick app plus Postgres setup, pricing can grow with usage.
 - Hetzner, DigitalOcean, or similar VPS: cheapest steady-state option, more server maintenance.
+
+## Fast Public Demo on Render
+
+1. Open Render and choose New > Blueprint.
+2. Connect `daverozee/mma-fight-predictor`.
+3. Select the `main` branch and the root `render.yaml`.
+4. Review the generated web service, environment variables, and 1 GB disk.
+5. Deploy the blueprint.
+
+The service will use Render's generated `SECRET_KEY`, SQLite at `/app/storage/app.db`, and the model artifact at `/app/storage/model.joblib`.
 
 For a public version, prefer:
 

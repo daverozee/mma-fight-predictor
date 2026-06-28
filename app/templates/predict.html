@@ -2,34 +2,31 @@
 {% block content %}
 <section class="page-head compact">
   <h1>Analyze matchup</h1>
-  <p>Select two fighters from the roster or enter a custom matchup.</p>
+  <p>Search the roster, select two fighters, or enter a custom matchup.</p>
   {% if error %}<p class="alert">{{ error }}</p>{% endif %}
 </section>
-{% if fighters %}
-<form method="post" action="/predict/from-profiles" class="matchup-form saved-matchup-form">
+{% if fighters_available %}
+<form method="post" action="/predict/from-profiles" class="matchup-form saved-matchup-form" id="roster-matchup-form">
   <fieldset>
     <legend>Roster matchup</legend>
-    <div class="form-grid two-columns">
-      <label>Fighter A
-        <select name="a_profile_id" required data-preview-target="fighter-a-preview">
-          {% for fighter in fighters %}
-            <option value="{{ fighter.id }}" data-thumbnail="{{ media_urls[fighter.name] }}" data-name="{{ fighter.name }}" data-class="{{ fighter.weight_class }}">{{ fighter.name }} - {{ fighter.weight_class }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Fighter B
-        <select name="b_profile_id" required data-preview-target="fighter-b-preview">
-          {% for fighter in fighters %}
-            <option value="{{ fighter.id }}" data-thumbnail="{{ media_urls[fighter.name] }}" data-name="{{ fighter.name }}" data-class="{{ fighter.weight_class }}" {% if loop.index == 2 %}selected{% endif %}>{{ fighter.name }} - {{ fighter.weight_class }}</option>
-          {% endfor %}
-        </select>
-      </label>
+    <div class="fighter-search-grid">
+      {% for side, label in [("a", "Fighter A"), ("b", "Fighter B")] %}
+        <section class="fighter-search-panel" data-fighter-search="{{ side }}">
+          <label>{{ label }}
+            <span class="search-control">
+              <input type="search" autocomplete="off" placeholder="Search by fighter name" data-search-input>
+              <button class="button secondary search-button" type="button" data-search-button>Search</button>
+            </span>
+          </label>
+          <input type="hidden" name="{{ side }}_profile_id" data-selected-id>
+          <div class="fighter-result-list" data-search-results></div>
+          <div class="fighter-select-preview empty" data-selected-preview>
+            <span><strong>No fighter selected</strong><small>Search and choose a roster match.</small></span>
+          </div>
+        </section>
+      {% endfor %}
     </div>
-    <div class="fighter-preview-grid" aria-label="Selected fighter thumbnails">
-      <div id="fighter-a-preview" class="fighter-select-preview"></div>
-      <div id="fighter-b-preview" class="fighter-select-preview"></div>
-    </div>
-    <button class="button" type="submit">Analyze matchup</button>
+    <button class="button" type="submit" data-matchup-submit disabled>Analyze matchup</button>
   </fieldset>
 </form>
 {% endif %}
@@ -59,19 +56,108 @@
   <button class="button" type="submit">Predict winner</button>
 </form>
 <script>
-  function updateFighterPreview(select) {
-    const target = document.getElementById(select.dataset.previewTarget);
-    const option = select.selectedOptions[0];
-    if (!target || !option) return;
-    target.innerHTML = `
-      <img class="fighter-thumb large" src="${option.dataset.thumbnail}" alt="">
-      <span><strong>${option.dataset.name}</strong><small>${option.dataset.class}</small></span>
-    `;
+  const searchState = { a: null, b: null };
+  const submitButton = document.querySelector("[data-matchup-submit]");
+
+  function updateSubmitState() {
+    if (!submitButton) return;
+    submitButton.disabled = !(searchState.a && searchState.b && searchState.a !== searchState.b);
   }
 
-  document.querySelectorAll("select[data-preview-target]").forEach((select) => {
-    updateFighterPreview(select);
-    select.addEventListener("change", () => updateFighterPreview(select));
+  function renderMessage(panel, message) {
+    const results = panel.querySelector("[data-search-results]");
+    results.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "fighter-result-empty";
+    empty.textContent = message;
+    results.appendChild(empty);
+  }
+
+  function selectFighter(panel, fighter) {
+    const side = panel.dataset.fighterSearch;
+    const hidden = panel.querySelector("[data-selected-id]");
+    const preview = panel.querySelector("[data-selected-preview]");
+    const results = panel.querySelector("[data-search-results]");
+    const input = panel.querySelector("[data-search-input]");
+
+    searchState[side] = String(fighter.id);
+    panel.dataset.selectedName = fighter.name;
+    hidden.value = fighter.id;
+    input.value = fighter.name;
+    results.innerHTML = "";
+    preview.classList.remove("empty");
+    preview.innerHTML = "";
+    const image = document.createElement("img");
+    image.className = "fighter-thumb large";
+    image.src = fighter.thumbnail_url;
+    image.alt = "";
+    const text = document.createElement("span");
+    const name = document.createElement("strong");
+    const meta = document.createElement("small");
+    name.textContent = fighter.name;
+    meta.textContent = `${fighter.weight_class} - ${Math.round(fighter.wins)}-${Math.round(fighter.losses)}`;
+    text.append(name, meta);
+    preview.append(image, text);
+    updateSubmitState();
+  }
+
+  async function searchFighters(panel) {
+    const input = panel.querySelector("[data-search-input]");
+    const term = input.value.trim();
+    if (term.length < 2) {
+      renderMessage(panel, "Type at least two letters.");
+      return;
+    }
+
+    renderMessage(panel, "Searching roster...");
+    const response = await fetch(`/api/v1/fighters?search=${encodeURIComponent(term)}&limit=8`);
+    const payload = await response.json();
+    const results = panel.querySelector("[data-search-results]");
+    results.innerHTML = "";
+
+    if (!payload.fighters.length) {
+      renderMessage(panel, "No fighters found.");
+      return;
+    }
+
+    payload.fighters.forEach((fighter) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fighter-result-option";
+      button.innerHTML = `
+        <img class="fighter-thumb" src="${fighter.thumbnail_url}" alt="">
+        <span><strong></strong><small></small></span>
+      `;
+      button.querySelector("strong").textContent = fighter.name;
+      button.querySelector("small").textContent = `${fighter.weight_class} - ${Math.round(fighter.wins)}-${Math.round(fighter.losses)}`;
+      button.addEventListener("click", () => selectFighter(panel, fighter));
+      results.appendChild(button);
+    });
+  }
+
+  document.querySelectorAll("[data-fighter-search]").forEach((panel) => {
+    const input = panel.querySelector("[data-search-input]");
+    const button = panel.querySelector("[data-search-button]");
+    let timeout;
+
+    button.addEventListener("click", () => searchFighters(panel));
+    input.addEventListener("input", () => {
+      if (panel.dataset.selectedName && input.value !== panel.dataset.selectedName) {
+        searchState[panel.dataset.fighterSearch] = null;
+        panel.querySelector("[data-selected-id]").value = "";
+        panel.querySelector("[data-selected-preview]").classList.add("empty");
+        panel.querySelector("[data-selected-preview]").innerHTML = "<span><strong>No fighter selected</strong><small>Search and choose a roster match.</small></span>";
+        updateSubmitState();
+      }
+      clearTimeout(timeout);
+      timeout = setTimeout(() => searchFighters(panel), 250);
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        searchFighters(panel);
+      }
+    });
   });
 </script>
 {% endblock %}

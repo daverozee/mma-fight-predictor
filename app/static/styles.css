@@ -733,6 +733,87 @@ legend {
   margin: 16px 0;
 }
 
+.fighter-search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.fighter-search-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.search-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.search-control input {
+  min-width: 0;
+}
+
+.search-button {
+  min-height: 44px;
+  padding-inline: 16px;
+}
+
+.fighter-result-list {
+  min-height: 58px;
+  max-height: 322px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.fighter-result-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fighter-result-option:hover,
+.fighter-result-option:focus {
+  border-color: var(--accent);
+  background: #f3f8f5;
+}
+
+.fighter-result-option span,
+.fighter-select-preview span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fighter-result-option small,
+.fighter-select-preview small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.fighter-result-empty {
+  min-height: 50px;
+  display: grid;
+  place-items: center start;
+  padding: 0 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #fbfbf8;
+}
+
 .fighter-select-preview {
   min-height: 84px;
   display: flex;
@@ -742,6 +823,10 @@ legend {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f7faf8;
+}
+
+.fighter-select-preview.empty {
+  color: var(--muted);
 }
 
 .fighter-select-preview span {
@@ -923,6 +1008,7 @@ legend {
   .form-grid,
   .two-columns,
   .fighter-preview-grid,
+  .fighter-search-grid,
   .fighter-row,
   .feed-overview,
   .feed-stats,

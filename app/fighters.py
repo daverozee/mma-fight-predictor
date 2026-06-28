@@ -55,6 +55,22 @@ def list_fighters(db: Session) -> list[FighterProfile]:
     return list(db.scalars(select(FighterProfile).order_by(FighterProfile.name)).all())
 
 
+def search_fighters(
+    db: Session,
+    search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[int, list[FighterProfile]]:
+    query = select(FighterProfile)
+    if search:
+        query = query.where(FighterProfile.name.ilike(f"%{search.strip()}%"))
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    fighters = list(
+        db.scalars(query.order_by(FighterProfile.name).offset(offset).limit(limit)).all()
+    )
+    return total, fighters
+
+
 def list_imported_fighter_index(db: Session, limit: int = 250) -> list[dict[str, object]]:
     rows = db.execute(
         select(

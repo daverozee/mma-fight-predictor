@@ -18,6 +18,7 @@ from app.fighters import (
     list_fighters,
     profile_to_features,
     promote_imported_fighters_to_profiles,
+    search_fighters,
 )
 from app.fight_tree import build_defeat_tree, fight_result_count
 from app.ingestion.connectors import import_catalog, ingestion_counts
@@ -363,18 +364,13 @@ def api_fighters(
     limit: int = Query(default=50, ge=1, le=250),
     offset: int = Query(default=0, ge=0),
 ) -> dict[str, object]:
-    fighters = list_fighters(db)
-    if search:
-        lowered = search.lower()
-        fighters = [fighter for fighter in fighters if lowered in fighter.name.lower()]
-    total = len(fighters)
-    page = fighters[offset : offset + limit]
-    media_urls = fighter_thumbnail_urls(db, page)
+    total, fighters = search_fighters(db, search=search, limit=limit, offset=offset)
+    media_urls = fighter_thumbnail_urls(db, fighters)
     return {
         "total": total,
         "limit": limit,
         "offset": offset,
-        "fighters": [serialize_fighter(fighter, media_urls[fighter.name]) for fighter in page],
+        "fighters": [serialize_fighter(fighter, media_urls[fighter.name]) for fighter in fighters],
     }
 
 
@@ -443,15 +439,14 @@ def render_predict_page(
     error: str | None = None,
     status_code: int = status.HTTP_200_OK,
 ) -> HTMLResponse:
-    fighters = list_fighters(db)
+    counts = fighter_data_counts(db)
     return templates.TemplateResponse(
         request,
         "predict.html",
         {
             "user": user,
             "error": error,
-            "fighters": fighters,
-            "media_urls": fighter_thumbnail_urls(db, fighters),
+            "fighters_available": counts["prediction_ready"] > 1,
         },
         status_code=status_code,
     )

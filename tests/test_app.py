@@ -26,7 +26,7 @@ def test_auth_and_prediction_flow() -> None:
 
         response = client.get("/predict")
         assert response.status_code == 200
-        assert "Predict from profiles" in response.text
+        assert "Roster matchup" in response.text
 
         payload = {
             "a_name": "Alex Mercer",
@@ -56,7 +56,7 @@ def test_auth_and_prediction_flow() -> None:
         }
         response = client.post("/predict", data=payload)
         assert response.status_code == 200
-        assert "Model prediction" in response.text
+        assert "Matchup outlook" in response.text
 
 
 def test_seeded_fighter_profiles_can_drive_prediction() -> None:
@@ -81,7 +81,7 @@ def test_seeded_fighter_profiles_can_drive_prediction() -> None:
             data={"a_profile_id": 1, "b_profile_id": 2},
         )
         assert response.status_code == 200
-        assert "Model prediction" in response.text
+        assert "Matchup outlook" in response.text
 
 
 def test_public_api_lists_fighters_and_predicts() -> None:

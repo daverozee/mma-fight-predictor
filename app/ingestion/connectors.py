@@ -4,7 +4,9 @@ import csv
 import json
 import os
 import re
+import time
 import urllib.request
+from urllib.error import HTTPError
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -179,8 +181,18 @@ def read_source_bodies(source: dict[str, Any]) -> list[str]:
 
 def read_http_body(source: dict[str, Any], location: str) -> str:
     request = urllib.request.Request(location, headers=source_headers(source))
-    with urllib.request.urlopen(request, timeout=int(source.get("timeout_seconds", 30))) as response:
-        return response.read().decode(source.get("encoding", "utf-8"))
+    max_retries = int(source.get("max_retries", 0))
+    for attempt in range(max_retries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=int(source.get("timeout_seconds", 30))) as response:
+                return response.read().decode(source.get("encoding", "utf-8"))
+        except HTTPError as exc:
+            if exc.code != 429 or attempt >= max_retries:
+                raise
+            retry_after = exc.headers.get("Retry-After")
+            delay = int(retry_after) if retry_after and retry_after.isdigit() else int(source.get("retry_seconds", 65))
+            time.sleep(delay)
+    raise RuntimeError(f"Could not read {location}")
 
 
 def source_headers(source: dict[str, Any]) -> dict[str, str]:

@@ -28,6 +28,8 @@ The catalog includes two live templates that are skipped unless their environmen
 - `BALLDONTLIE_API_KEY` enables `balldontlie-fighters-live`.
 - `THE_ODDS_API_KEY` enables `the-odds-api-mma-current`.
 
+The default BALLDONTLIE template imports up to 5 pages of 25 fighters per run to stay polite on low-tier API limits. Increase `pagination.max_pages` only after confirming the account's current rate limit.
+
 Run:
 
 ```powershell
@@ -43,3 +45,7 @@ Without keys, the importer uses the local sample and supplemental feeds. With ke
 3. Add `Event`, `Bout`, `RankingSnapshot`, and `OddsSnapshot` tables so live sources are not forced into fighter-level features only.
 4. Add a scheduled import job for production hosting.
 5. Add a source status page for import counts, last run, and provider errors.
+
+## Current Import Shape
+
+Live API records are stored as wide external features even when they are not complete enough to be prediction-ready `FighterProfile` rows. A fighter becomes prediction-ready only after the app has the full required profile fields: age, height, reach, record, finishing rates, takedown metrics, and strike pace.

@@ -83,6 +83,8 @@ Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local f
 
 See `LIVE_FEEDS.md` for live API and scraping candidates.
 
+Live API records can expand the raw fighter universe before every fighter is prediction-ready. Prediction-ready fighters still need the complete profile fields used by the model.
+
 ## Fighter Profiles
 
 On startup the app seeds `fighter_profiles` from `app/data/sample_fighters.csv` when the table is empty. The prediction page can compare two saved profiles directly, while manual entry remains available for newer stats or hypothetical matchups.

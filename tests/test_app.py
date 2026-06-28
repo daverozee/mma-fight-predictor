@@ -59,7 +59,7 @@ def test_auth_and_prediction_flow() -> None:
         assert "Matchup outlook" in response.text
 
 
-def test_seeded_fighter_profiles_can_drive_prediction() -> None:
+def test_fighter_profiles_can_drive_prediction() -> None:
     email = f"profiles-{uuid4()}@example.com"
     password = "good-password"
 
@@ -73,17 +73,20 @@ def test_seeded_fighter_profiles_can_drive_prediction() -> None:
 
         response = client.get("/fighters")
         assert response.status_code == 200
-        assert "Alex Mercer" in response.text
-        assert "Jordan Vale" in response.text
         assert "Find a fighter" in response.text
 
-        response = client.get("/fighters/1")
+        response = client.get("/api/v1/fighters?limit=2")
+        assert response.status_code == 200
+        fighters = response.json()["fighters"]
+        assert len(fighters) == 2
+
+        response = client.get(f"/fighters/{fighters[0]['id']}")
         assert response.status_code == 200
         assert "Core profile" in response.text
 
         response = client.post(
             "/predict/from-profiles",
-            data={"a_profile_id": 1, "b_profile_id": 2},
+            data={"a_profile_id": fighters[0]["id"], "b_profile_id": fighters[1]["id"]},
         )
         assert response.status_code == 200
         assert "Matchup outlook" in response.text

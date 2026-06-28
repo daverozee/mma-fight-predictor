@@ -75,6 +75,11 @@ def test_seeded_fighter_profiles_can_drive_prediction() -> None:
         assert response.status_code == 200
         assert "Alex Mercer" in response.text
         assert "Jordan Vale" in response.text
+        assert "Find a fighter" in response.text
+
+        response = client.get("/fighters/1")
+        assert response.status_code == 200
+        assert "Core profile" in response.text
 
         response = client.post(
             "/predict/from-profiles",

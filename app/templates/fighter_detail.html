@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% macro stat(label, value) %}
+  <div><span>{{ label }}</span><strong>{{ value }}</strong></div>
+{% endmacro %}
+{% block content %}
+<section class="fighter-detail-head">
+  <img class="fighter-portrait" src="{{ thumbnail_url }}" alt="">
+  <div>
+    <p class="eyebrow">{{ fighter.weight_class }}</p>
+    <h1>{{ fighter.name }}</h1>
+    <p>{{ fighter.wins | int }}-{{ fighter.losses | int }} record · {{ fighter.reach_cm | round(1) }} cm reach · {{ fighter.height_cm | round(1) }} cm height</p>
+    <div class="actions">
+      <a class="button" href="/predict">Analyze matchup</a>
+      <a class="button secondary" href="/tree?fighter_id={{ fighter.id }}">Open fight history</a>
+    </div>
+  </div>
+</section>
+<section class="band">
+  <div class="fighter-detail-grid">
+    <article>
+      <h2>Core profile</h2>
+      <div class="profile-stat-grid">
+        {{ stat("Age", fighter.age | round(1)) }}
+        {{ stat("Height", (fighter.height_cm | round(1)) ~ " cm") }}
+        {{ stat("Reach", (fighter.reach_cm | round(1)) ~ " cm") }}
+        {{ stat("Record", (fighter.wins | int) ~ "-" ~ (fighter.losses | int)) }}
+      </div>
+    </article>
+    <article>
+      <h2>Fight indicators</h2>
+      <div class="profile-stat-grid">
+        {{ stat("KO rate", ((fighter.ko_rate * 100) | round(1)) ~ "%") }}
+        {{ stat("Submission rate", ((fighter.submission_rate * 100) | round(1)) ~ "%") }}
+        {{ stat("Takedown accuracy", ((fighter.takedown_accuracy * 100) | round(1)) ~ "%") }}
+        {{ stat("Takedown defense", ((fighter.takedown_defense * 100) | round(1)) ~ "%") }}
+      </div>
+    </article>
+    <article>
+      <h2>Striking pace</h2>
+      <div class="profile-stat-grid">
+        {{ stat("Landed per min", fighter.strikes_landed_per_min | round(1)) }}
+        {{ stat("Absorbed per min", fighter.strikes_absorbed_per_min | round(1)) }}
+      </div>
+    </article>
+  </div>
+</section>
+<section class="band">
+  <h2>Fight history</h2>
+  {% if fight_result_count == 0 %}
+    <div class="empty-state">
+      <h2>Fight history is being prepared.</h2>
+      <p>Opponent chains will appear here as verified bout history becomes available.</p>
+    </div>
+  {% else %}
+    <div class="actions">
+      <a class="button secondary" href="/tree?fighter_id={{ fighter.id }}">Explore defeat tree</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

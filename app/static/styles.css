@@ -850,6 +850,15 @@ legend {
   background: #fff;
 }
 
+.roster-search {
+  max-width: 1100px;
+  margin: 0 auto 16px;
+}
+
+.roster-table {
+  margin-top: 0;
+}
+
 .fighter-row {
   display: grid;
   grid-template-columns: 1.4fr 1fr 0.7fr 0.8fr 0.6fr 0.6fr;
@@ -857,6 +866,16 @@ legend {
   align-items: center;
   padding: 14px 16px;
   border-top: 1px solid var(--line);
+}
+
+.fighter-row-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.fighter-row-link:hover,
+.fighter-row-link:focus {
+  background: #f7faf8;
 }
 
 .fighter-row:first-child {
@@ -869,6 +888,76 @@ legend {
   font-size: 0.82rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.roster-message {
+  grid-template-columns: 1fr;
+  color: var(--muted);
+}
+
+.fighter-detail-head {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px clamp(18px, 4vw, 40px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.fighter-detail-head h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  line-height: 0.95;
+}
+
+.fighter-detail-head p {
+  max-width: 720px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.fighter-portrait {
+  width: 132px;
+  height: 132px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #e7ece9;
+  box-shadow: inset 0 0 0 1px rgba(18, 28, 24, 0.08);
+}
+
+.fighter-detail-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.profile-stat-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-stat-grid div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-stat-grid div:last-child {
+  border-bottom: 0;
+}
+
+.profile-stat-grid span {
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.profile-stat-grid strong {
+  text-align: right;
 }
 
 .fighter-stats {
@@ -1009,6 +1098,8 @@ legend {
   .two-columns,
   .fighter-preview-grid,
   .fighter-search-grid,
+  .fighter-detail-head,
+  .fighter-detail-grid,
   .fighter-row,
   .feed-overview,
   .feed-stats,

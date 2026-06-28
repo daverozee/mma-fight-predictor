@@ -3,7 +3,7 @@
 <section class="page-head compact">
   <p class="eyebrow">Fighter roster</p>
   <h1>Fighters</h1>
-  <p>Browse the current roster with divisions, records, reach, pace, and defensive indicators available for matchup analysis.</p>
+  <p>Search the roster or browse the opening list to review divisions, records, reach, pace, and defensive indicators.</p>
   <div class="feed-stats fighter-stats" aria-label="Fighter data totals">
     <div><strong>{{ counts.prediction_ready }}</strong><span>Fighters available</span></div>
     <div><strong>{{ counts.imported_names }}</strong><span>Roster coverage</span></div>
@@ -11,8 +11,15 @@
   </div>
 </section>
 <section class="band">
-  <h2>Roster</h2>
-  <div class="fighter-table">
+  <div class="roster-search">
+    <label>Find a fighter
+      <span class="search-control">
+        <input id="fighter-roster-search" type="search" autocomplete="off" placeholder="Search by fighter name">
+        <button class="button secondary search-button" type="button" id="fighter-roster-search-button">Search</button>
+      </span>
+    </label>
+  </div>
+  <div class="fighter-table roster-table" id="fighter-roster-table">
     <div class="fighter-row header">
       <span>Name</span>
       <span>Class</span>
@@ -21,23 +28,96 @@
       <span>SLpM</span>
       <span>SApM</span>
     </div>
-    {% for fighter in fighters %}
-      <div class="fighter-row">
-        <strong class="fighter-identity">
-          <img class="fighter-thumb" src="{{ media_urls[fighter.name] }}" alt="" loading="lazy">
-          <span>{{ fighter.name }}</span>
-        </strong>
-        <span>{{ fighter.weight_class }}</span>
-        <span>{{ fighter.wins | int }}-{{ fighter.losses | int }}</span>
-        <span>{{ fighter.reach_cm | round(1) }} cm</span>
-        <span>{{ fighter.strikes_landed_per_min | round(1) }}</span>
-        <span>{{ fighter.strikes_absorbed_per_min | round(1) }}</span>
-      </div>
-    {% endfor %}
+    <div id="fighter-roster-results">
+      {% for fighter in fighters %}
+        <a class="fighter-row fighter-row-link" href="/fighters/{{ fighter.id }}">
+          <strong class="fighter-identity">
+            <img class="fighter-thumb" src="{{ media_urls[fighter.name] }}" alt="" loading="lazy">
+            <span>{{ fighter.name }}</span>
+          </strong>
+          <span>{{ fighter.weight_class }}</span>
+          <span>{{ fighter.wins | int }}-{{ fighter.losses | int }}</span>
+          <span>{{ fighter.reach_cm | round(1) }} cm</span>
+          <span>{{ fighter.strikes_landed_per_min | round(1) }}</span>
+          <span>{{ fighter.strikes_absorbed_per_min | round(1) }}</span>
+        </a>
+      {% endfor %}
+    </div>
   </div>
   <p class="section-copy">Some fighters use estimated values where complete public statistics are not yet available.</p>
   <div class="actions">
     <a class="button" href="/predict">Analyze matchup</a>
   </div>
 </section>
+<script>
+  const rosterInput = document.getElementById("fighter-roster-search");
+  const rosterButton = document.getElementById("fighter-roster-search-button");
+  const rosterResults = document.getElementById("fighter-roster-results");
+  let rosterTimeout;
+
+  function rosterMessage(message) {
+    rosterResults.innerHTML = "";
+    const row = document.createElement("div");
+    row.className = "fighter-row roster-message";
+    row.textContent = message;
+    rosterResults.appendChild(row);
+  }
+
+  function renderRosterFighter(fighter) {
+    const row = document.createElement("a");
+    row.className = "fighter-row fighter-row-link";
+    row.href = `/fighters/${fighter.id}`;
+    row.innerHTML = `
+      <strong class="fighter-identity">
+        <img class="fighter-thumb" src="${fighter.thumbnail_url}" alt="" loading="lazy">
+        <span></span>
+      </strong>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    `;
+    const cells = row.querySelectorAll("span");
+    cells[0].textContent = fighter.name;
+    cells[1].textContent = fighter.weight_class;
+    cells[2].textContent = `${Math.round(fighter.wins)}-${Math.round(fighter.losses)}`;
+    cells[3].textContent = `${Number(fighter.reach_cm).toFixed(1)} cm`;
+    cells[4].textContent = Number(fighter.strikes_landed_per_min).toFixed(1);
+    cells[5].textContent = Number(fighter.strikes_absorbed_per_min).toFixed(1);
+    return row;
+  }
+
+  async function searchRoster() {
+    const term = rosterInput.value.trim();
+    if (term.length < 2) {
+      rosterMessage("Type at least two letters.");
+      return;
+    }
+
+    rosterMessage("Searching roster...");
+    const response = await fetch(`/api/v1/fighters?search=${encodeURIComponent(term)}&limit=25`);
+    const payload = await response.json();
+    rosterResults.innerHTML = "";
+
+    if (!payload.fighters.length) {
+      rosterMessage("No fighters found.");
+      return;
+    }
+
+    payload.fighters.forEach((fighter) => rosterResults.appendChild(renderRosterFighter(fighter)));
+  }
+
+  rosterButton.addEventListener("click", searchRoster);
+  rosterInput.addEventListener("input", () => {
+    clearTimeout(rosterTimeout);
+    rosterTimeout = setTimeout(searchRoster, 250);
+  });
+  rosterInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchRoster();
+    }
+  });
+</script>
 {% endblock %}

@@ -156,7 +156,7 @@ def fighters_page(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
-    fighters = list_fighters(db)
+    _, fighters = search_fighters(db, limit=50)
     media_urls = fighter_thumbnail_urls(db, fighters)
     return templates.TemplateResponse(
         request,
@@ -166,6 +166,31 @@ def fighters_page(
             "fighters": fighters,
             "counts": fighter_data_counts(db),
             "media_urls": media_urls,
+        },
+    )
+
+
+@app.get("/fighters/{fighter_id}", response_class=HTMLResponse)
+def fighter_detail_page(
+    fighter_id: int,
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    fighter = get_fighter(db, fighter_id)
+    if fighter is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
+    media_urls = fighter_thumbnail_urls(db, [fighter])
+    tree = build_defeat_tree(db, fighter) if fight_result_count(db) else None
+    return templates.TemplateResponse(
+        request,
+        "fighter_detail.html",
+        {
+            "user": user,
+            "fighter": fighter,
+            "thumbnail_url": media_urls[fighter.name],
+            "fight_result_count": fight_result_count(db),
+            "tree": tree,
         },
     )
 

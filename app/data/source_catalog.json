@@ -71,7 +71,27 @@
         "wins": "record_wins",
         "losses": "record_losses"
       },
-      "extra_feature_mode": "all_unmapped"
+      "feature_fields": [
+        "id",
+        "active",
+        "first_name",
+        "last_name",
+        "nickname",
+        "nationality",
+        "date_of_birth",
+        "height_inches",
+        "reach_inches",
+        "weight_lbs",
+        "stance",
+        "record_wins",
+        "record_losses",
+        "record_draws",
+        "record_no_contests",
+        "weight_class.name",
+        "weight_class.abbreviation",
+        "weight_class.gender",
+        "weight_class.weight_limit_lbs"
+      ]
     },
     {
       "name": "the-odds-api-mma-current",

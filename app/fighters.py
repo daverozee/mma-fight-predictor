@@ -1,4 +1,5 @@
 from csv import DictReader
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -22,6 +23,32 @@ PROFILE_COLUMNS = [
     "strikes_landed_per_min",
     "strikes_absorbed_per_min",
 ]
+
+AVERAGE_PROFILE_VALUES = {
+    "age": 30.0,
+    "height_cm": 176.0,
+    "reach_cm": 180.0,
+    "wins": 10.0,
+    "losses": 3.0,
+    "ko_rate": 0.34,
+    "submission_rate": 0.22,
+    "takedown_accuracy": 0.45,
+    "takedown_defense": 0.69,
+    "strikes_landed_per_min": 4.4,
+    "strikes_absorbed_per_min": 3.4,
+}
+
+WEIGHT_CLASS_NAMES = {
+    "SW": "Strawweight",
+    "FLW": "Flyweight",
+    "BW": "Bantamweight",
+    "FW": "Featherweight",
+    "LW": "Lightweight",
+    "WW": "Welterweight",
+    "MW": "Middleweight",
+    "LHW": "Light Heavyweight",
+    "HW": "Heavyweight",
+}
 
 
 def list_fighters(db: Session) -> list[FighterProfile]:
@@ -58,6 +85,103 @@ def fighter_data_counts(db: Session) -> dict[str, int]:
         or 0,
         "external_features": db.scalar(select(func.count()).select_from(FighterExternalFeature)) or 0,
     }
+
+
+def promote_imported_fighters_to_profiles(db: Session, limit: int | None = None) -> int:
+    imported_names = list(
+        db.scalars(
+            select(FighterExternalFeature.fighter_name)
+            .group_by(FighterExternalFeature.fighter_name)
+            .order_by(FighterExternalFeature.fighter_name)
+            .limit(limit)
+        )
+    )
+    created = 0
+    for name in imported_names:
+        if db.scalar(select(FighterProfile.id).where(FighterProfile.name == name)) is not None:
+            continue
+        feature_map = features_for_fighter(db, name)
+        profile = FighterProfile(**provisional_profile_payload(name, feature_map))
+        db.add(profile)
+        db.flush()
+        db.query(FighterExternalFeature).filter(
+            FighterExternalFeature.fighter_name == name,
+            FighterExternalFeature.fighter_profile_id.is_(None),
+        ).update({"fighter_profile_id": profile.id})
+        created += 1
+    db.commit()
+    return created
+
+
+def features_for_fighter(db: Session, name: str) -> dict[str, str | float]:
+    rows = db.scalars(
+        select(FighterExternalFeature).where(FighterExternalFeature.fighter_name == name)
+    ).all()
+    features = {}
+    for row in rows:
+        features[row.feature_name] = row.numeric_value if row.numeric_value is not None else row.text_value
+    return features
+
+
+def provisional_profile_payload(name: str, features: dict[str, str | float]) -> dict[str, str | float]:
+    age = age_from_dob(features.get("balldontlie_fighters_live_date_of_birth"))
+    height_cm = inches_to_cm(features.get("balldontlie_fighters_live_height_inches"))
+    reach_cm = inches_to_cm(features.get("balldontlie_fighters_live_reach_inches"))
+    weight_class = weight_class_name(features.get("balldontlie_fighters_live_weight_class_abbreviation"))
+    wins = numeric_feature(features, "balldontlie_fighters_live_record_wins")
+    losses = numeric_feature(features, "balldontlie_fighters_live_record_losses")
+
+    return {
+        "name": name,
+        "weight_class": weight_class or "Unknown",
+        "age": age or AVERAGE_PROFILE_VALUES["age"],
+        "height_cm": height_cm or AVERAGE_PROFILE_VALUES["height_cm"],
+        "reach_cm": reach_cm or height_cm or AVERAGE_PROFILE_VALUES["reach_cm"],
+        "wins": wins if wins is not None else AVERAGE_PROFILE_VALUES["wins"],
+        "losses": losses if losses is not None else AVERAGE_PROFILE_VALUES["losses"],
+        "ko_rate": AVERAGE_PROFILE_VALUES["ko_rate"],
+        "submission_rate": AVERAGE_PROFILE_VALUES["submission_rate"],
+        "takedown_accuracy": AVERAGE_PROFILE_VALUES["takedown_accuracy"],
+        "takedown_defense": AVERAGE_PROFILE_VALUES["takedown_defense"],
+        "strikes_landed_per_min": AVERAGE_PROFILE_VALUES["strikes_landed_per_min"],
+        "strikes_absorbed_per_min": AVERAGE_PROFILE_VALUES["strikes_absorbed_per_min"],
+        "source": "provisional-live-feed",
+    }
+
+
+def numeric_feature(features: dict[str, str | float], key: str) -> float | None:
+    value = features.get(key)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def inches_to_cm(value: str | float | None) -> float | None:
+    try:
+        return round(float(value) * 2.54, 1) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def age_from_dob(value: str | float | None) -> float | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        born = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    today = datetime.now(timezone.utc)
+    age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+    return float(age)
+
+
+def weight_class_name(value: str | float | None) -> str | None:
+    if not isinstance(value, str) or not value:
+        return None
+    return WEIGHT_CLASS_NAMES.get(value.upper(), value)
 
 
 def get_fighter(db: Session, fighter_id: int) -> FighterProfile | None:

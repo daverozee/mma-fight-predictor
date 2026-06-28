@@ -18,6 +18,7 @@ from app.fighters import (
     list_fighters,
     list_imported_fighter_index,
     profile_to_features,
+    promote_imported_fighters_to_profiles,
 )
 from app.ingestion.connectors import import_catalog, ingestion_counts
 from app.ml.features import FighterFeatures
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         counts = ingestion_counts(db)
         if counts["fighters"] == 0 or counts["external_features"] == 0:
             import_catalog(db)
+        promote_imported_fighters_to_profiles(db)
     yield
 
 

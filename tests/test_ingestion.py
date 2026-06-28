@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
+from app.fighters import promote_imported_fighters_to_profiles
 from app.ingestion.connectors import flatten_record, import_catalog, source_enabled, with_query_params
 from app.models import FighterExternalFeature, FighterProfile
 
@@ -101,6 +102,47 @@ def test_open_catalog_imports_csv_and_json_sources(tmp_path: Path) -> None:
         "test_json_elo",
         "test_json_stance",
     }
+
+
+def test_imported_fighters_can_be_promoted_to_provisional_profiles(tmp_path: Path) -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    with Session() as db:
+        db.add_all(
+            [
+                FighterExternalFeature(
+                    fighter_name="Live Fighter",
+                    feature_name="balldontlie_fighters_live_date_of_birth",
+                    text_value="1990-01-01T00:00:00.000Z",
+                    source="balldontlie-fighters-live",
+                ),
+                FighterExternalFeature(
+                    fighter_name="Live Fighter",
+                    feature_name="balldontlie_fighters_live_height_inches",
+                    numeric_value=70,
+                    source="balldontlie-fighters-live",
+                ),
+                FighterExternalFeature(
+                    fighter_name="Live Fighter",
+                    feature_name="balldontlie_fighters_live_weight_class_abbreviation",
+                    text_value="LW",
+                    source="balldontlie-fighters-live",
+                ),
+            ]
+        )
+        db.commit()
+
+        promoted = promote_imported_fighters_to_profiles(db)
+        profile = db.scalar(select(FighterProfile).where(FighterProfile.name == "Live Fighter"))
+
+    assert promoted == 1
+    assert profile is not None
+    assert profile.source == "provisional-live-feed"
+    assert profile.weight_class == "Lightweight"
+    assert profile.height_cm == 177.8
+    assert profile.wins == 10
 
 
 def test_live_sources_can_be_env_gated(monkeypatch) -> None:

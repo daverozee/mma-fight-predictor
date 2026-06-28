@@ -3,7 +3,7 @@
 <section class="page-head compact">
   <p class="eyebrow">Fighter data library</p>
   <h1>Fighter profiles</h1>
-  <p>Prediction-ready profiles require complete model inputs. The imported fighter index shows the broader live-feed universe already stored in the feature layer.</p>
+  <p>Prediction-ready profiles include complete sourced profiles plus provisional live-feed profiles that use source fields where available and league-average fallbacks where coverage is incomplete.</p>
   <div class="feed-stats fighter-stats" aria-label="Fighter data totals">
     <div><strong>{{ counts.prediction_ready }}</strong><span>Prediction-ready profiles</span></div>
     <div><strong>{{ counts.imported_names }}</strong><span>Imported fighter names</span></div>
@@ -32,6 +32,7 @@
       </div>
     {% endfor %}
   </div>
+  <p class="section-copy">Rows sourced from `provisional-live-feed` are comparable now, but their missing statistics are estimated until richer source data is imported.</p>
   <div class="actions">
     <a class="button" href="/predict">Analyze matchup</a>
   </div>

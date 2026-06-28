@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from app.database import SessionLocal, init_db  # noqa: E402
+from app.fighters import promote_imported_fighters_to_profiles  # noqa: E402
 from app.ingestion.connectors import DEFAULT_CATALOG_PATH, import_catalog, ingestion_counts  # noqa: E402
 
 
@@ -13,6 +14,7 @@ def main() -> None:
     init_db()
     with SessionLocal() as db:
         result = import_catalog(db, catalog_path)
+        promoted = promote_imported_fighters_to_profiles(db)
         counts = ingestion_counts(db)
 
     print(f"Catalog: {catalog_path}")
@@ -32,6 +34,7 @@ def main() -> None:
         f"created={result.profiles_created}, "
         f"updated={result.profiles_updated}, "
         f"features_imported={result.features_imported}, "
+        f"profiles_promoted={promoted}, "
         f"fighters_in_db={counts['fighters']}, "
         f"external_features_in_db={counts['external_features']}"
     )

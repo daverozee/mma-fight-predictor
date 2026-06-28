@@ -80,6 +80,31 @@ def fetch_wikimedia_media(db: Session, limit: int | None = None) -> dict[str, in
     return {"checked": checked, "found": found, "missing": missing}
 
 
+def fetch_wikidata_mma_media(db: Session, limit: int | None = None) -> dict[str, int]:
+    rows = wikidata_mma_image_rows(limit=limit)
+    media_by_name = {
+        row.fighter_name.lower(): row
+        for row in db.scalars(select(FighterMedia)).all()
+    }
+    matched = skipped = 0
+    for row in rows:
+        name = row["name"].strip()
+        media = media_by_name.get(name.lower())
+        if media is None:
+            skipped += 1
+            continue
+        media.thumbnail_url = row["image_url"]
+        media.page_url = row["page_url"]
+        media.source = "wikidata-commons"
+        media.status = "found"
+        media.fetched_at = datetime.utcnow()
+        matched += 1
+        if matched % 100 == 0:
+            db.commit()
+    db.commit()
+    return {"checked": len(rows), "matched": matched, "skipped": skipped}
+
+
 def wikimedia_thumbnail(name: str) -> dict[str, str] | None:
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(name)}"
     request = urllib.request.Request(
@@ -101,6 +126,51 @@ def wikimedia_thumbnail(name: str) -> dict[str, str] | None:
     if not thumbnail_url:
         return None
     return {"thumbnail_url": str(thumbnail_url), "page_url": str(page_url or "")}
+
+
+def wikidata_mma_image_rows(limit: int | None = None) -> list[dict[str, str]]:
+    limit_clause = f"LIMIT {int(limit)}" if limit else ""
+    query = f"""
+SELECT ?person ?personLabel ?image WHERE {{
+  ?person wdt:P31 wd:Q5;
+          wdt:P106 wd:Q11607585;
+          wdt:P18 ?image.
+  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
+}}
+{limit_clause}
+"""
+    url = "https://query.wikidata.org/sparql?" + urllib.parse.urlencode(
+        {"format": "json", "query": query}
+    )
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "mma-fight-predictor/0.1 (wikidata image import)"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    rows = []
+    seen_names = set()
+    for binding in payload.get("results", {}).get("bindings", []):
+        name = binding.get("personLabel", {}).get("value")
+        image_url = binding.get("image", {}).get("value")
+        page_url = binding.get("person", {}).get("value")
+        if not name or not image_url or name.lower() in seen_names:
+            continue
+        seen_names.add(name.lower())
+        rows.append(
+            {
+                "name": str(name),
+                "image_url": commons_file_url(str(image_url)),
+                "page_url": str(page_url or ""),
+            }
+        )
+    return rows
+
+
+def commons_file_url(url: str) -> str:
+    url = url.replace("http://commons.wikimedia.org/", "https://commons.wikimedia.org/")
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}width=160"
 
 
 def media_url_for_name(media: FighterMedia | None, name: str) -> str:

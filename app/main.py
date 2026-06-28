@@ -20,7 +20,9 @@ from app.fighters import (
     profile_to_features,
     promote_imported_fighters_to_profiles,
 )
+from app.fight_tree import build_defeat_tree, fight_result_count
 from app.ingestion.connectors import import_catalog, ingestion_counts
+from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls, thumbnail_urls_for_names
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
@@ -154,14 +156,19 @@ def fighters_page(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
+    fighters = list_fighters(db)
+    imported_fighters = list_imported_fighter_index(db)
+    media_urls = fighter_thumbnail_urls(db, fighters)
+    media_urls.update(thumbnail_urls_for_names(db, [fighter["name"] for fighter in imported_fighters]))
     return templates.TemplateResponse(
         request,
         "fighters.html",
         {
             "user": user,
-            "fighters": list_fighters(db),
-            "imported_fighters": list_imported_fighter_index(db),
+            "fighters": fighters,
+            "imported_fighters": imported_fighters,
             "counts": fighter_data_counts(db),
+            "media_urls": media_urls,
         },
     )
 
@@ -247,7 +254,14 @@ def predict(
     return templates.TemplateResponse(
         request,
         "result.html",
-        {"user": user, "fighter_a": fighter_a, "fighter_b": fighter_b, "result": result},
+        {
+            "user": user,
+            "fighter_a": fighter_a,
+            "fighter_b": fighter_b,
+            "fighter_a_thumbnail": fallback_thumbnail_url(fighter_a.name),
+            "fighter_b_thumbnail": fallback_thumbnail_url(fighter_b.name),
+            "result": result,
+        },
     )
 
 
@@ -282,16 +296,52 @@ def predict_from_profiles(
     fighter_a = profile_to_features(profile_a)
     fighter_b = profile_to_features(profile_b)
     result = predictor.predict(fighter_a, fighter_b)
+    media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return templates.TemplateResponse(
         request,
         "result.html",
-        {"user": user, "fighter_a": fighter_a, "fighter_b": fighter_b, "result": result},
+        {
+            "user": user,
+            "fighter_a": fighter_a,
+            "fighter_b": fighter_b,
+            "fighter_a_thumbnail": media_urls[profile_a.name],
+            "fighter_b_thumbnail": media_urls[profile_b.name],
+            "result": result,
+        },
+    )
+
+
+@app.get("/tree", response_class=HTMLResponse)
+def tree_page(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+    fighter_id: int | None = Query(default=None),
+) -> HTMLResponse:
+    fighters = list_fighters(db)
+    selected = get_fighter(db, fighter_id) if fighter_id else (fighters[0] if fighters else None)
+    tree = build_defeat_tree(db, selected) if selected and fight_result_count(db) else None
+    return templates.TemplateResponse(
+        request,
+        "tree.html",
+        {
+            "user": user,
+            "fighters": fighters,
+            "selected": selected,
+            "tree": tree,
+            "fight_result_count": fight_result_count(db),
+        },
     )
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/v1/fighter-thumbnail.svg")
+def generated_fighter_thumbnail(name: str = Query(default="MMA Fighter", max_length=120)) -> Response:
+    return Response(avatar_svg(name), media_type="image/svg+xml")
 
 
 @app.get("/api/v1/meta")
@@ -304,6 +354,7 @@ def api_meta(db: Session = Depends(get_db)) -> dict[str, object]:
         "endpoints": {
             "fighters": "/api/v1/fighters",
             "fighter_detail": "/api/v1/fighters/{fighter_id}",
+            "fighter_defeat_tree": "/api/v1/fighters/{fighter_id}/defeat-tree",
             "prediction": "/api/v1/predict",
         },
     }
@@ -322,11 +373,12 @@ def api_fighters(
         fighters = [fighter for fighter in fighters if lowered in fighter.name.lower()]
     total = len(fighters)
     page = fighters[offset : offset + limit]
+    media_urls = fighter_thumbnail_urls(db, page)
     return {
         "total": total,
         "limit": limit,
         "offset": offset,
-        "fighters": [serialize_fighter(fighter) for fighter in page],
+        "fighters": [serialize_fighter(fighter, media_urls[fighter.name]) for fighter in page],
     }
 
 
@@ -335,7 +387,25 @@ def api_fighter(fighter_id: int, db: Session = Depends(get_db)) -> dict[str, obj
     fighter = get_fighter(db, fighter_id)
     if fighter is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
-    return serialize_fighter(fighter)
+    media_urls = fighter_thumbnail_urls(db, [fighter])
+    return serialize_fighter(fighter, media_urls[fighter.name])
+
+
+@app.get("/api/v1/fighters/{fighter_id}/defeat-tree")
+def api_fighter_defeat_tree(
+    fighter_id: int,
+    db: Session = Depends(get_db),
+    depth: int = Query(default=4, ge=1, le=8),
+    max_children: int = Query(default=80, ge=1, le=250),
+) -> dict[str, object]:
+    fighter = get_fighter(db, fighter_id)
+    if fighter is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
+    return {
+        "fighter": serialize_fighter(fighter, fighter_thumbnail_urls(db, [fighter])[fighter.name]),
+        "fight_result_edges": fight_result_count(db),
+        "tree": build_defeat_tree(db, fighter, depth=depth, max_children=max_children),
+    }
 
 
 @app.post("/api/v1/predict")
@@ -361,9 +431,10 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
     fighter_a = profile_to_features(profile_a)
     fighter_b = profile_to_features(profile_b)
     result = predictor.predict(fighter_a, fighter_b)
+    media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return {
-        "fighter_a": serialize_fighter(profile_a),
-        "fighter_b": serialize_fighter(profile_b),
+        "fighter_a": serialize_fighter(profile_a, media_urls[profile_a.name]),
+        "fighter_b": serialize_fighter(profile_b, media_urls[profile_b.name]),
         "prediction": result,
         "note": "Provisional-live-feed profiles may use league-average fallbacks for missing stats.",
     }
@@ -376,18 +447,25 @@ def render_predict_page(
     error: str | None = None,
     status_code: int = status.HTTP_200_OK,
 ) -> HTMLResponse:
+    fighters = list_fighters(db)
     return templates.TemplateResponse(
         request,
         "predict.html",
-        {"user": user, "error": error, "fighters": list_fighters(db)},
+        {
+            "user": user,
+            "error": error,
+            "fighters": fighters,
+            "media_urls": fighter_thumbnail_urls(db, fighters),
+        },
         status_code=status_code,
     )
 
 
-def serialize_fighter(fighter: object) -> dict[str, object]:
+def serialize_fighter(fighter: object, thumbnail_url: str | None = None) -> dict[str, object]:
     return {
         "id": fighter.id,
         "name": fighter.name,
+        "thumbnail_url": thumbnail_url or fallback_thumbnail_url(fighter.name),
         "weight_class": fighter.weight_class,
         "age": fighter.age,
         "height_cm": fighter.height_cm,

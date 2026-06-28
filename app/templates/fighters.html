@@ -23,7 +23,10 @@
     </div>
     {% for fighter in fighters %}
       <div class="fighter-row">
-        <strong>{{ fighter.name }}</strong>
+        <strong class="fighter-identity">
+          <img class="fighter-thumb" src="{{ media_urls[fighter.name] }}" alt="" loading="lazy">
+          <span>{{ fighter.name }}</span>
+        </strong>
         <span>{{ fighter.weight_class }}</span>
         <span>{{ fighter.wins | int }}-{{ fighter.losses | int }}</span>
         <span>{{ fighter.reach_cm | round(1) }} cm</span>
@@ -48,7 +51,10 @@
     </div>
     {% for fighter in imported_fighters %}
       <div class="imported-fighter-row">
-        <strong>{{ fighter.name }}</strong>
+        <strong class="fighter-identity">
+          <img class="fighter-thumb" src="{{ media_urls[fighter.name] }}" alt="" loading="lazy">
+          <span>{{ fighter.name }}</span>
+        </strong>
         <span>{{ fighter.sources | join(", ") }}</span>
         <span>{{ fighter.feature_count }}</span>
       </div>

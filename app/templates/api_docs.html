@@ -3,19 +3,29 @@
 <section class="page-head compact">
   <p class="eyebrow">Public JSON API</p>
   <h1>Build on the fight predictor.</h1>
-  <p>Use the API to list fighters, inspect profile features, and request matchup predictions from two fighter IDs.</p>
+  <p>Use the API to list fighters, inspect profile features, retrieve thumbnails, request matchup predictions, and expand defeat trees.</p>
 </section>
 <section class="band">
   <div class="api-grid">
     <article>
       <h2>List fighters</h2>
       <code>GET /api/v1/fighters?limit=25&amp;search=cruz</code>
-      <p>Returns prediction-ready and provisional fighter profiles with model input fields.</p>
+      <p>Returns prediction-ready and provisional fighter profiles with model input fields and thumbnail URLs.</p>
     </article>
     <article>
       <h2>Get one fighter</h2>
       <code>GET /api/v1/fighters/1</code>
       <p>Returns one fighter profile by ID.</p>
+    </article>
+    <article>
+      <h2>Defeat tree</h2>
+      <code>GET /api/v1/fighters/1/defeat-tree?depth=4</code>
+      <p>Returns nested winner-to-defeated-opponent branches after fight-result edges are imported.</p>
+    </article>
+    <article>
+      <h2>Generated thumbnail</h2>
+      <code>GET /api/v1/fighter-thumbnail.svg?name=cruz</code>
+      <p>Returns a deterministic fallback thumbnail for any fighter name.</p>
     </article>
     <article>
       <h2>Predict matchup</h2>

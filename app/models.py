@@ -65,6 +65,58 @@ class FighterExternalFeature(Base):
     imported_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class FighterMedia(Base):
+    __tablename__ = "fighter_media"
+    __table_args__ = (UniqueConstraint("fighter_name", name="uq_fighter_media_name"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    fighter_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fighter_profiles.id"),
+        nullable=True,
+        index=True,
+    )
+    fighter_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    page_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(120), nullable=False, default="generated-fallback")
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="generated")
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class FightResult(Base):
+    __tablename__ = "fight_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "winner_name",
+            "loser_name",
+            "event_name",
+            "bout_date",
+            "source",
+            name="uq_fight_results_identity",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    winner_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fighter_profiles.id"),
+        nullable=True,
+        index=True,
+    )
+    loser_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fighter_profiles.id"),
+        nullable=True,
+        index=True,
+    )
+    winner_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    loser_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    event_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    bout_date: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    method: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    source: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    imported_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class SourceImportRun(Base):
     __tablename__ = "source_import_runs"
 

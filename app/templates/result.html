@@ -6,11 +6,17 @@
   <p class="lede">Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</p>
   <div class="probabilities">
     <div>
-      <span>{{ fighter_a.name }}</span>
+      <span class="fighter-identity">
+        <img class="fighter-thumb" src="{{ fighter_a_thumbnail }}" alt="">
+        <span>{{ fighter_a.name }}</span>
+      </span>
       <strong>{{ (result.probability_a * 100) | round(1) }}%</strong>
     </div>
     <div>
-      <span>{{ fighter_b.name }}</span>
+      <span class="fighter-identity">
+        <img class="fighter-thumb" src="{{ fighter_b_thumbnail }}" alt="">
+        <span>{{ fighter_b.name }}</span>
+      </span>
       <strong>{{ (result.probability_b * 100) | round(1) }}%</strong>
     </div>
   </div>

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% macro render_node(node) %}
+  <li>
+    <details open>
+      <summary>
+        <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
+        <span>
+          <strong>{{ node.name }}</strong>
+          {% if node.bout_date or node.method %}
+            <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
+          {% endif %}
+        </span>
+      </summary>
+      {% if node.defeated %}
+        <ul>
+          {% for child in node.defeated %}
+            {{ render_node(child) }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </details>
+  </li>
+{% endmacro %}
+{% block content %}
+<section class="page-head compact">
+  <p class="eyebrow">Fight history graph</p>
+  <h1>Fighter defeat tree</h1>
+  <p>Pick a fighter to expand the chain of opponents they defeated, then follow each defeated fighter's own wins as nested branches.</p>
+</section>
+<section class="band">
+  <form class="matchup-form tree-picker" method="get" action="/tree">
+    <label>Root fighter
+      <select name="fighter_id">
+        {% for fighter in fighters %}
+          <option value="{{ fighter.id }}" {% if selected and fighter.id == selected.id %}selected{% endif %}>{{ fighter.name }} - {{ fighter.weight_class }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="button" type="submit">Open tree</button>
+  </form>
+  {% if fight_result_count == 0 %}
+    <div class="empty-state">
+      <h2>No fight-result edges imported yet.</h2>
+      <p>Import a bout-history CSV or connector with winner and loser fields to populate this navigable defeat tree.</p>
+      <code>python scripts/import_fight_results.py path/to/fights.csv</code>
+    </div>
+  {% elif tree %}
+    <div class="tree-shell">
+      <ul class="fighter-tree">
+        {{ render_node(tree) }}
+      </ul>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

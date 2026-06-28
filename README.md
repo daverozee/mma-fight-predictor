@@ -8,7 +8,7 @@ This project is not betting advice. The model output is an experimental probabil
 
 - Trainable scikit-learn model with a sample MMA-style dataset
 - Seeded fighter profile library with CSV import path
-- Planned multi-source feed adapters for fighter stats, bout history, rankings, odds movement, and recent activity
+- Multi-source feed adapters for fighter stats, bout history, rankings, odds movement, and recent activity
 - Normalized matchup features for size, record, finishing rates, wrestling, striking pace, and defensive metrics
 - Protected app workflow with local development and Docker support
 - MIT licensed and ready for GitHub
@@ -60,11 +60,11 @@ This repo includes a starter GitHub presence:
 
 Before publishing, create a GitHub repository, push this project, and set the default branch to `main` so the CI workflow runs on pushes and pull requests.
 
-## Data Roadmap
+## Data Feeds
 
-The current app uses `app/data/sample_fights.csv` so the workflow is runnable from day one. The intended production path is:
+The app normalizes incoming MMA data into fighter, bout, and matchup features. The local sample files keep the workflow runnable from day one while the same structures support external feeds.
 
-1. Add source adapters for multiple existing MMA sites, APIs, downloadable datasets, or licensed providers.
+1. Use source adapters for multiple existing MMA sites, APIs, downloadable datasets, or licensed providers.
 2. Store normalized fighter, bout, and event records.
 3. Add scheduled refresh jobs and provenance metadata for every source.
 4. Train and evaluate models with time-based splits to avoid future data leakage.

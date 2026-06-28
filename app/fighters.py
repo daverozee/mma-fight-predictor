@@ -1,11 +1,11 @@
 from csv import DictReader
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.ml.features import FighterFeatures
-from app.models import FighterProfile
+from app.models import FighterExternalFeature, FighterProfile
 
 PROFILE_COLUMNS = [
     "name",
@@ -26,6 +26,38 @@ PROFILE_COLUMNS = [
 
 def list_fighters(db: Session) -> list[FighterProfile]:
     return list(db.scalars(select(FighterProfile).order_by(FighterProfile.name)).all())
+
+
+def list_imported_fighter_index(db: Session, limit: int = 250) -> list[dict[str, object]]:
+    rows = db.execute(
+        select(
+            FighterExternalFeature.fighter_name,
+            func.count(FighterExternalFeature.id).label("feature_count"),
+            func.group_concat(func.distinct(FighterExternalFeature.source)).label("sources"),
+        )
+        .group_by(FighterExternalFeature.fighter_name)
+        .order_by(FighterExternalFeature.fighter_name)
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "name": row.fighter_name,
+            "feature_count": row.feature_count,
+            "sources": sorted((row.sources or "").split(",")),
+        }
+        for row in rows
+    ]
+
+
+def fighter_data_counts(db: Session) -> dict[str, int]:
+    return {
+        "prediction_ready": db.scalar(select(func.count()).select_from(FighterProfile)) or 0,
+        "imported_names": db.scalar(
+            select(func.count(func.distinct(FighterExternalFeature.fighter_name)))
+        )
+        or 0,
+        "external_features": db.scalar(select(func.count()).select_from(FighterExternalFeature)) or 0,
+    }
 
 
 def get_fighter(db: Session, fighter_id: int) -> FighterProfile | None:

@@ -528,6 +528,47 @@ legend {
   text-transform: uppercase;
 }
 
+.fighter-stats {
+  max-width: 720px;
+  margin-top: 24px;
+}
+
+.section-copy {
+  max-width: 760px;
+  margin: 0 auto 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.imported-table {
+  max-height: 620px;
+  overflow: auto;
+}
+
+.imported-fighter-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr 0.7fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.imported-fighter-row:first-child {
+  border-top: 0;
+}
+
+.imported-fighter-row.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f0f5f2;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 @media (max-width: 760px) {
   .topbar,
   nav {
@@ -543,7 +584,8 @@ legend {
   .feed-overview,
   .feed-stats,
   .feed-map,
-  .promotion-grid {
+  .promotion-grid,
+  .imported-fighter-row {
     grid-template-columns: 1fr;
   }
 

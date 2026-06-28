@@ -12,7 +12,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.auth import authenticate_user, create_user
 from app.config import get_settings
 from app.database import get_db, init_db
-from app.fighters import get_fighter, list_fighters, profile_to_features
+from app.fighters import (
+    fighter_data_counts,
+    get_fighter,
+    list_fighters,
+    list_imported_fighter_index,
+    profile_to_features,
+)
 from app.ingestion.connectors import import_catalog, ingestion_counts
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
@@ -136,7 +142,12 @@ def fighters_page(
     return templates.TemplateResponse(
         request,
         "fighters.html",
-        {"user": user, "fighters": list_fighters(db)},
+        {
+            "user": user,
+            "fighters": list_fighters(db),
+            "imported_fighters": list_imported_fighter_index(db),
+            "counts": fighter_data_counts(db),
+        },
     )
 
 

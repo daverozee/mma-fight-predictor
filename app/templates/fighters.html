@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-head compact">
-  <p class="eyebrow">Seeded profile library</p>
+  <p class="eyebrow">Fighter data library</p>
   <h1>Fighter profiles</h1>
-  <p>Use these baseline profiles for quick predictions, then replace or extend the CSV as better sourced data arrives.</p>
+  <p>Prediction-ready profiles require complete model inputs. The imported fighter index shows the broader live-feed universe already stored in the feature layer.</p>
+  <div class="feed-stats fighter-stats" aria-label="Fighter data totals">
+    <div><strong>{{ counts.prediction_ready }}</strong><span>Prediction-ready profiles</span></div>
+    <div><strong>{{ counts.imported_names }}</strong><span>Imported fighter names</span></div>
+    <div><strong>{{ counts.external_features }}</strong><span>External feature values</span></div>
+  </div>
 </section>
 <section class="band">
+  <h2>Prediction-ready profiles</h2>
   <div class="fighter-table">
     <div class="fighter-row header">
       <span>Name</span>
@@ -28,6 +34,24 @@
   </div>
   <div class="actions">
     <a class="button" href="/predict">Analyze matchup</a>
+  </div>
+</section>
+<section class="band">
+  <h2>Imported live fighter index</h2>
+  <p class="section-copy">These fighters have imported source features, but may still need full age, reach, striking, and grappling stats before they can be used directly in model predictions.</p>
+  <div class="fighter-table imported-table">
+    <div class="imported-fighter-row header">
+      <span>Name</span>
+      <span>Sources</span>
+      <span>Feature values</span>
+    </div>
+    {% for fighter in imported_fighters %}
+      <div class="imported-fighter-row">
+        <strong>{{ fighter.name }}</strong>
+        <span>{{ fighter.sources | join(", ") }}</span>
+        <span>{{ fighter.feature_count }}</span>
+      </div>
+    {% endfor %}
   </div>
 </section>
 {% endblock %}

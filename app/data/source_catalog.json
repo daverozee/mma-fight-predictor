@@ -52,8 +52,10 @@
       "format": "json",
       "location": "https://api.balldontlie.io/mma/v1/fighters",
       "record_path": "data",
+      "source_record_id_field": "id",
       "max_retries": 1,
       "retry_seconds": 65,
+      "commit_interval": 100,
       "headers": {
         "Authorization": "${BALLDONTLIE_API_KEY}"
       },
@@ -61,9 +63,10 @@
         "type": "cursor",
         "cursor_param": "cursor",
         "per_page_param": "per_page",
-        "per_page": 25,
+        "per_page": 100,
         "next_cursor_path": "meta.next_cursor",
-        "max_pages": 5
+        "initial_cursor_env": "BALLDONTLIE_FIGHTERS_START_CURSOR",
+        "max_pages": 500
       },
       "profile_mapping": {
         "name": "name",

@@ -41,8 +41,8 @@
     </div>
     <div class="feed-stats" aria-label="Imported data totals">
       <div><strong>4</strong><span>Configured feeds</span></div>
-      <div><strong>146</strong><span>Imported fighter names</span></div>
-      <div><strong>1,243</strong><span>External feature values</span></div>
+      <div><strong>{{ "{:,}".format(counts.imported_names) }}</strong><span>Imported fighter names</span></div>
+      <div><strong>{{ "{:,}".format(counts.external_features) }}</strong><span>External feature values</span></div>
     </div>
   </div>
   <div class="feed-map" aria-label="Data feeds incorporated">

@@ -88,9 +88,11 @@ def fighter_data_counts(db: Session) -> dict[str, int]:
 
 
 def promote_imported_fighters_to_profiles(db: Session, limit: int | None = None) -> int:
+    existing_profile_names = select(FighterProfile.name)
     imported_names = list(
         db.scalars(
             select(FighterExternalFeature.fighter_name)
+            .where(FighterExternalFeature.fighter_name.not_in(existing_profile_names))
             .group_by(FighterExternalFeature.fighter_name)
             .order_by(FighterExternalFeature.fighter_name)
             .limit(limit)

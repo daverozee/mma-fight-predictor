@@ -96,13 +96,19 @@ def import_source(db: Session, source: dict[str, Any]) -> SourceResult:
 
     records_seen = profiles_created = profiles_updated = features_imported = 0
     try:
-        records = read_records(source)
-        for record in records:
+        commit_interval = int(source.get("commit_interval", 100))
+        for record in iter_records(source):
             records_seen += 1
             profile, created, updated = upsert_profile(db, source, record)
             profiles_created += int(created)
             profiles_updated += int(updated)
             features_imported += upsert_external_features(db, source, record, profile)
+            if records_seen % commit_interval == 0:
+                run.records_seen = records_seen
+                run.profiles_created = profiles_created
+                run.profiles_updated = profiles_updated
+                run.features_imported = features_imported
+                db.commit()
         run.status = "completed"
     except Exception as exc:  # noqa: BLE001
         run.status = "failed"
@@ -133,33 +139,42 @@ def load_catalog(catalog_path: str | Path) -> dict[str, Any]:
 
 
 def read_records(source: dict[str, Any]) -> list[dict[str, Any]]:
+    return list(iter_records(source))
+
+
+def iter_records(source: dict[str, Any]) -> Iterable[dict[str, Any]]:
     source_format = source["format"].lower()
-    records: list[dict[str, Any]] = []
-    for body in read_source_bodies(source):
+    for body in iter_source_bodies(source):
         if source_format == "csv":
-            records.extend(list(csv.DictReader(body.splitlines())))
+            yield from csv.DictReader(body.splitlines())
         elif source_format == "json":
             parsed = json.loads(body)
             raw_records = get_record_path(parsed, source.get("record_path"))
             if not isinstance(raw_records, list):
                 raise ValueError(f"{source['name']} JSON record path did not resolve to a list")
-            records.extend(flatten_record(record) for record in raw_records if isinstance(record, dict))
+            for record in raw_records:
+                if isinstance(record, dict):
+                    yield flatten_record(record)
         else:
             raise ValueError(f"Unsupported source format: {source_format}")
-    return records
 
 
 def read_source_bodies(source: dict[str, Any]) -> list[str]:
+    return list(iter_source_bodies(source))
+
+
+def iter_source_bodies(source: dict[str, Any]) -> Iterable[str]:
     location = interpolate_env(source["location"])
     if not location.startswith(("http://", "https://")):
-        return [resolve_location(location).read_text(encoding=source.get("encoding", "utf-8"))]
+        yield resolve_location(location).read_text(encoding=source.get("encoding", "utf-8"))
+        return
 
     pagination = source.get("pagination", {})
     if pagination.get("type") != "cursor":
-        return [read_http_body(source, location)]
+        yield read_http_body(source, location)
+        return
 
-    bodies = []
-    cursor: str | None = None
+    cursor = initial_cursor(pagination)
     max_pages = int(pagination.get("max_pages", 10))
     for _ in range(max_pages):
         page_url = with_query_params(
@@ -170,13 +185,12 @@ def read_source_bodies(source: dict[str, Any]) -> list[str]:
             },
         )
         body = read_http_body(source, page_url)
-        bodies.append(body)
+        yield body
         parsed = json.loads(body)
         next_cursor = get_record_path(parsed, pagination.get("next_cursor_path", "meta.next_cursor"))
         if is_blank(next_cursor):
             break
         cursor = str(next_cursor)
-    return bodies
 
 
 def read_http_body(source: dict[str, Any], location: str) -> str:
@@ -200,6 +214,14 @@ def source_headers(source: dict[str, Any]) -> dict[str, str]:
     for key, value in source.get("headers", {}).items():
         headers[key] = interpolate_env(str(value))
     return headers
+
+
+def initial_cursor(pagination: dict[str, Any]) -> str | None:
+    cursor_env = pagination.get("initial_cursor_env")
+    if cursor_env and os.getenv(str(cursor_env)):
+        return os.getenv(str(cursor_env))
+    cursor = pagination.get("initial_cursor")
+    return None if is_blank(cursor) else str(cursor)
 
 
 def upsert_profile(

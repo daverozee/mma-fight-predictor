@@ -72,8 +72,16 @@ def redirect_to_login(request: Request, exc: RedirectToLogin) -> RedirectRespons
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, user: User | None = Depends(current_user)) -> HTMLResponse:
-    return templates.TemplateResponse(request, "index.html", {"user": user})
+def index(
+    request: Request,
+    user: User | None = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"user": user, "counts": fighter_data_counts(db)},
+    )
 
 
 @app.get("/api-docs", response_class=HTMLResponse)

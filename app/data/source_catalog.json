@@ -44,6 +44,43 @@
         "name": "name"
       },
       "extra_feature_mode": "all_unmapped"
+    },
+    {
+      "name": "balldontlie-fighters-live",
+      "enabled": true,
+      "enabled_env": "BALLDONTLIE_API_KEY",
+      "format": "json",
+      "location": "https://api.balldontlie.io/mma/v1/fighters",
+      "record_path": "data",
+      "headers": {
+        "Authorization": "${BALLDONTLIE_API_KEY}"
+      },
+      "pagination": {
+        "type": "cursor",
+        "cursor_param": "cursor",
+        "per_page_param": "per_page",
+        "per_page": 100,
+        "next_cursor_path": "meta.next_cursor",
+        "max_pages": 25
+      },
+      "profile_mapping": {
+        "name": "name",
+        "weight_class": "weight_class.name",
+        "wins": "record_wins",
+        "losses": "record_losses"
+      },
+      "extra_feature_mode": "all_unmapped"
+    },
+    {
+      "name": "the-odds-api-mma-current",
+      "enabled": true,
+      "enabled_env": "THE_ODDS_API_KEY",
+      "format": "json",
+      "location": "https://api.the-odds-api.com/v4/sports/mma_mixed_martial_arts/odds/?apiKey=${THE_ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american",
+      "profile_mapping": {
+        "name": "home_team"
+      },
+      "extra_feature_mode": "all_unmapped"
     }
   ]
 }

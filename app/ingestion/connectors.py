@@ -5,6 +5,7 @@ import json
 import os
 import re
 import urllib.request
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
@@ -74,7 +75,7 @@ def import_catalog(db: Session, catalog_path: str | Path = DEFAULT_CATALOG_PATH)
     catalog = load_catalog(catalog_path)
     results = []
     for source in catalog.get("sources", []):
-        if source.get("enabled", True):
+        if source_enabled(source):
             results.append(import_source(db, source))
     return CatalogResult(sources=results)
 
@@ -130,26 +131,56 @@ def load_catalog(catalog_path: str | Path) -> dict[str, Any]:
 
 
 def read_records(source: dict[str, Any]) -> list[dict[str, Any]]:
-    body = read_source_body(source)
     source_format = source["format"].lower()
-    if source_format == "csv":
-        return list(csv.DictReader(body.splitlines()))
-    if source_format == "json":
-        parsed = json.loads(body)
-        records = get_record_path(parsed, source.get("record_path"))
-        if not isinstance(records, list):
-            raise ValueError(f"{source['name']} JSON record path did not resolve to a list")
-        return [record for record in records if isinstance(record, dict)]
-    raise ValueError(f"Unsupported source format: {source_format}")
+    records: list[dict[str, Any]] = []
+    for body in read_source_bodies(source):
+        if source_format == "csv":
+            records.extend(list(csv.DictReader(body.splitlines())))
+        elif source_format == "json":
+            parsed = json.loads(body)
+            raw_records = get_record_path(parsed, source.get("record_path"))
+            if not isinstance(raw_records, list):
+                raise ValueError(f"{source['name']} JSON record path did not resolve to a list")
+            records.extend(flatten_record(record) for record in raw_records if isinstance(record, dict))
+        else:
+            raise ValueError(f"Unsupported source format: {source_format}")
+    return records
 
 
-def read_source_body(source: dict[str, Any]) -> str:
+def read_source_bodies(source: dict[str, Any]) -> list[str]:
     location = interpolate_env(source["location"])
-    if location.startswith(("http://", "https://")):
-        request = urllib.request.Request(location, headers=source_headers(source))
-        with urllib.request.urlopen(request, timeout=int(source.get("timeout_seconds", 30))) as response:
-            return response.read().decode(source.get("encoding", "utf-8"))
-    return resolve_location(location).read_text(encoding=source.get("encoding", "utf-8"))
+    if not location.startswith(("http://", "https://")):
+        return [resolve_location(location).read_text(encoding=source.get("encoding", "utf-8"))]
+
+    pagination = source.get("pagination", {})
+    if pagination.get("type") != "cursor":
+        return [read_http_body(source, location)]
+
+    bodies = []
+    cursor: str | None = None
+    max_pages = int(pagination.get("max_pages", 10))
+    for _ in range(max_pages):
+        page_url = with_query_params(
+            location,
+            {
+                pagination.get("cursor_param", "cursor"): cursor,
+                pagination.get("per_page_param", "per_page"): pagination.get("per_page"),
+            },
+        )
+        body = read_http_body(source, page_url)
+        bodies.append(body)
+        parsed = json.loads(body)
+        next_cursor = get_record_path(parsed, pagination.get("next_cursor_path", "meta.next_cursor"))
+        if is_blank(next_cursor):
+            break
+        cursor = str(next_cursor)
+    return bodies
+
+
+def read_http_body(source: dict[str, Any], location: str) -> str:
+    request = urllib.request.Request(location, headers=source_headers(source))
+    with urllib.request.urlopen(request, timeout=int(source.get("timeout_seconds", 30))) as response:
+        return response.read().decode(source.get("encoding", "utf-8"))
 
 
 def source_headers(source: dict[str, Any]) -> dict[str, str]:
@@ -333,6 +364,19 @@ def get_record_path(parsed: Any, record_path: str | None) -> Any:
     return current
 
 
+def flatten_record(record: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    flattened: dict[str, Any] = {}
+    for key, value in record.items():
+        path = f"{prefix}.{key}" if prefix else str(key)
+        if isinstance(value, dict):
+            flattened.update(flatten_record(value, path))
+        else:
+            flattened[path] = value
+            if not prefix:
+                flattened.setdefault(str(key), value)
+    return flattened
+
+
 def resolve_location(location: str) -> Path:
     path = Path(location)
     if path.is_absolute():
@@ -345,6 +389,24 @@ def interpolate_env(value: str) -> str:
         return os.getenv(match.group(1), "")
 
     return re.sub(r"\$\{([A-Z0-9_]+)\}", replace, value)
+
+
+def source_enabled(source: dict[str, Any]) -> bool:
+    if not source.get("enabled", True):
+        return False
+    enabled_env = source.get("enabled_env")
+    if enabled_env and not os.getenv(enabled_env):
+        return False
+    return True
+
+
+def with_query_params(location: str, params: dict[str, Any]) -> str:
+    parsed = urlparse(location)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    for key, value in params.items():
+        if key and not is_blank(value):
+            query[str(key)] = str(value)
+    return urlunparse(parsed._replace(query=urlencode(query)))
 
 
 def is_blank(value: Any) -> bool:

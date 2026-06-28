@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.ingestion.connectors import import_catalog
+from app.ingestion.connectors import flatten_record, import_catalog, source_enabled, with_query_params
 from app.models import FighterExternalFeature, FighterProfile
 
 
@@ -101,3 +101,25 @@ def test_open_catalog_imports_csv_and_json_sources(tmp_path: Path) -> None:
         "test_json_elo",
         "test_json_stance",
     }
+
+
+def test_live_sources_can_be_env_gated(monkeypatch) -> None:
+    source = {"name": "live", "enabled": True, "enabled_env": "MMA_TEST_KEY"}
+
+    monkeypatch.delenv("MMA_TEST_KEY", raising=False)
+    assert source_enabled(source) is False
+
+    monkeypatch.setenv("MMA_TEST_KEY", "secret")
+    assert source_enabled(source) is True
+
+
+def test_json_flattening_and_query_params_support_api_catalogs() -> None:
+    record = flatten_record({"name": "A", "weight_class": {"name": "Lightweight"}})
+    url = with_query_params(
+        "https://example.test/fighters?per_page=50",
+        {"cursor": 123, "per_page": 100, "skip": None},
+    )
+
+    assert record["weight_class.name"] == "Lightweight"
+    assert record["name"] == "A"
+    assert url == "https://example.test/fighters?per_page=100&cursor=123"

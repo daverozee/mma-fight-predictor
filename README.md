@@ -81,6 +81,8 @@ python scripts/import_data.py
 
 Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local files or URLs, and map provider fields into profile fields. Source URLs and headers support environment placeholders such as `${BALLDONTLIE_API_KEY}`. Unmapped fields can be stored as external fighter features so the feature list can grow without changing the prediction schema every time a source adds a new stat.
 
+See `LIVE_FEEDS.md` for live API and scraping candidates.
+
 ## Fighter Profiles
 
 On startup the app seeds `fighter_profiles` from `app/data/sample_fighters.csv` when the table is empty. The prediction page can compare two saved profiles directly, while manual entry remains available for newer stats or hypothetical matchups.

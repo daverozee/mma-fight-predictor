@@ -10,6 +10,7 @@ This project is not betting advice. The model output is an experimental probabil
 - Seeded fighter profile library with CSV import path
 - Multi-source feed adapters for fighter stats, bout history, rankings, odds movement, and recent activity
 - Normalized matchup features for size, record, finishing rates, wrestling, striking pace, and defensive metrics
+- Open JSON source catalog for importing CSV and JSON feeds with custom field mappings
 - Protected app workflow with local development and Docker support
 - MIT licensed and ready for GitHub
 
@@ -71,6 +72,14 @@ The app normalizes incoming MMA data into fighter, bout, and matchup features. T
 5. Deploy the web app and model artifacts separately once training becomes expensive.
 
 Be careful with website terms of service when collecting online data. Prefer official APIs, downloadable datasets, permissive public datasets, or licensed providers.
+
+Run a full configured import:
+
+```powershell
+python scripts/import_data.py
+```
+
+Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local files or URLs, and map provider fields into profile fields. Source URLs and headers support environment placeholders such as `${BALLDONTLIE_API_KEY}`. Unmapped fields can be stored as external fighter features so the feature list can grow without changing the prediction schema every time a source adds a new stat.
 
 ## Fighter Profiles
 

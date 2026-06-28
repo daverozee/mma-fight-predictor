@@ -12,7 +12,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.auth import authenticate_user, create_user
 from app.config import get_settings
 from app.database import get_db, init_db
-from app.fighters import get_fighter, list_fighters, profile_to_features, seed_sample_fighters
+from app.fighters import get_fighter, list_fighters, profile_to_features
+from app.ingestion.connectors import import_catalog, ingestion_counts
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
@@ -24,7 +25,9 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
     with next(get_db()) as db:
-        seed_sample_fighters(db)
+        counts = ingestion_counts(db)
+        if counts["fighters"] == 0 or counts["external_features"] == 0:
+            import_catalog(db)
     yield
 
 

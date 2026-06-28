@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -36,3 +36,47 @@ class FighterProfile(Base):
     strikes_absorbed_per_min: Mapped[float] = mapped_column(Float, nullable=False)
     source: Mapped[str] = mapped_column(String(120), nullable=False, default="sample")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class FighterExternalFeature(Base):
+    __tablename__ = "fighter_external_features"
+    __table_args__ = (
+        UniqueConstraint(
+            "fighter_name",
+            "feature_name",
+            "source",
+            name="uq_fighter_external_features_identity",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    fighter_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fighter_profiles.id"),
+        nullable=True,
+        index=True,
+    )
+    fighter_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    feature_name: Mapped[str] = mapped_column(String(160), nullable=False, index=True)
+    numeric_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    text_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_record_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    imported_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SourceImportRun(Base):
+    __tablename__ = "source_import_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    source_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    source_format: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_location: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="started")
+    records_seen: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    profiles_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    profiles_updated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    features_imported: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

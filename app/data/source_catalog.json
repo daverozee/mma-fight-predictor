@@ -1,0 +1,49 @@
+{
+  "sources": [
+    {
+      "name": "sample-fighter-profiles",
+      "enabled": true,
+      "format": "csv",
+      "location": "app/data/sample_fighters.csv",
+      "profile_mapping": {
+        "name": "name",
+        "weight_class": "weight_class",
+        "age": "age",
+        "height_cm": "height_cm",
+        "reach_cm": "reach_cm",
+        "wins": "wins",
+        "losses": "losses",
+        "ko_rate": "ko_rate",
+        "submission_rate": "submission_rate",
+        "takedown_accuracy": "takedown_accuracy",
+        "takedown_defense": "takedown_defense",
+        "strikes_landed_per_min": "strikes_landed_per_min",
+        "strikes_absorbed_per_min": "strikes_absorbed_per_min"
+      },
+      "feature_fields": [
+        "weight_class",
+        "age",
+        "height_cm",
+        "reach_cm",
+        "wins",
+        "losses",
+        "ko_rate",
+        "submission_rate",
+        "takedown_accuracy",
+        "takedown_defense",
+        "strikes_landed_per_min",
+        "strikes_absorbed_per_min"
+      ]
+    },
+    {
+      "name": "supplemental-fighter-features",
+      "enabled": true,
+      "format": "csv",
+      "location": "app/data/supplemental_fighter_features.csv",
+      "profile_mapping": {
+        "name": "name"
+      },
+      "extra_feature_mode": "all_unmapped"
+    }
+  ]
+}

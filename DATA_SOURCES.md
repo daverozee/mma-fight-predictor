@@ -52,7 +52,7 @@ Scraping UFCStats, Tapology, Fight Matrix, or Sherdog can wait until we have exp
 
 ## Practical Integration Order
 
-1. Add a provider interface that maps external records into internal `FighterProfile`, `Event`, `Bout`, `RankingSnapshot`, and `OddsSnapshot` models.
+1. Use `app/data/source_catalog.json` to map CSV or JSON records into `FighterProfile` and wide `FighterExternalFeature` rows.
 2. Start with BALLDONTLIE for fighters/events because it has a documented API and low entry cost.
 3. Add The Odds API for upcoming fight odds and market-implied probability.
 4. Use Kaggle or Hugging Face datasets offline for historical model training while API coverage matures.

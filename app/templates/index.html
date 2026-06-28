@@ -2,9 +2,9 @@
 {% block content %}
 <section class="hero">
   <div>
-    <p class="eyebrow">Open source MMA analytics</p>
-    <h1>Compare two fighters with a trainable machine learning model.</h1>
-    <p class="lede">Create an account, enter matchup features, and get a winner estimate with probabilities. The starter model is intentionally simple so the data pipeline can evolve in public.</p>
+    <p class="eyebrow">MMA matchup intelligence</p>
+    <h1>Project fighter outcomes from a richer view of each matchup.</h1>
+    <p class="lede">Compare fighters using profile metrics, recent form, striking pace, grappling tendencies, and defensive indicators. The goal is to combine trusted MMA data feeds into one clean feature set for each fighter.</p>
     <div class="actions">
       {% if user %}
         <a class="button" href="/predict">Analyze a fight</a>
@@ -18,16 +18,16 @@
 <section class="band">
   <div class="grid three">
     <article>
-      <h2>Authenticated</h2>
-      <p>Sessions, signup, login, and protected analysis pages are wired in from the first commit.</p>
+      <h2>Fighter profiles</h2>
+      <p>Build each matchup from age, frame, reach, record, finishing rates, takedown metrics, and strike volume.</p>
     </article>
     <article>
-      <h2>Trainable</h2>
-      <p>The prediction layer uses scikit-learn and can be retrained as stronger fighter and bout data arrives.</p>
+      <h2>Multiple feeds</h2>
+      <p>Planned source adapters will pull public stats, bout history, rankings, odds movement, and recent activity into normalized records.</p>
     </article>
     <article>
-      <h2>Deployable</h2>
-      <p>Docker local hosting keeps the development environment close to an affordable cloud deployment.</p>
+      <h2>Explainable edge</h2>
+      <p>Predictions show win probabilities and the feature differences driving the model, so a pick can be reviewed instead of blindly trusted.</p>
     </article>
   </div>
 </section>

@@ -3,7 +3,7 @@
 <section class="page-head">
   <p class="eyebrow">Signed in as {{ user.email }}</p>
   <h1>Fight analysis dashboard</h1>
-  <p>Start from seeded fighter profiles or enter a manual matchup when you have fresher stats.</p>
+  <p>Start from seeded fighter profiles now, then plug in fresher stats as data-feed adapters come online.</p>
   <div class="actions">
     <a class="button" href="/predict">Analyze matchup</a>
     <a class="button secondary" href="/fighters">Browse fighters</a>
@@ -12,12 +12,12 @@
 <section class="band">
   <div class="grid two">
     <article>
-      <h2>Current model</h2>
-      <p>Logistic regression trained on normalized matchup differences from the sample dataset.</p>
+      <h2>Matchup signal</h2>
+      <p>The model compares normalized differences in size, experience, finishing rates, wrestling, striking pace, and damage avoidance.</p>
     </article>
     <article>
-      <h2>Profile data</h2>
-      <p>Seeded fighter profiles can now be imported from CSV and used directly in matchup predictions.</p>
+      <h2>Data feeds</h2>
+      <p>The next ingestion layer should reconcile multiple existing MMA sites into sourced fighter, bout, event, ranking, and activity records.</p>
     </article>
   </div>
 </section>

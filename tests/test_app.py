@@ -3,6 +3,8 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.ml.features import FighterFeatures
+from app.ml.predictor import FightPredictor
 
 
 def test_health() -> None:
@@ -57,6 +59,33 @@ def test_auth_and_prediction_flow() -> None:
         response = client.post("/predict", data=payload)
         assert response.status_code == 200
         assert "Matchup outlook" in response.text
+        assert "Key read" in response.text
+        assert "Profile comparison" in response.text
+
+
+def test_identical_profiles_do_not_produce_arbitrary_favorite() -> None:
+    fighter_a = FighterFeatures(
+        name="Fighter A",
+        age=30,
+        height_cm=180,
+        reach_cm=184,
+        wins=10,
+        losses=3,
+        ko_rate=0.3,
+        submission_rate=0.2,
+        takedown_accuracy=0.4,
+        takedown_defense=0.7,
+        strikes_landed_per_min=4.2,
+        strikes_absorbed_per_min=3.1,
+    )
+    fighter_b = fighter_a.model_copy(update={"name": "Fighter B"})
+
+    result = FightPredictor().predict(fighter_a, fighter_b)
+
+    assert result["winner"] == "No clear edge"
+    assert result["probability_a"] == 0.5
+    assert result["probability_b"] == 0.5
+    assert result["comparison_strength"] == "Limited"
 
 
 def test_fighter_profiles_can_drive_prediction() -> None:

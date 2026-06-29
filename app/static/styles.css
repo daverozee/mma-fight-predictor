@@ -699,6 +699,94 @@ legend {
   background: #fff;
 }
 
+.outlook-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.outlook-meta span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.analysis-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 0.86fr 1.14fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.insight-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.insight-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.insight-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.insight-card strong {
+  font-size: 1.25rem;
+}
+
+.insight-card p {
+  margin: 0;
+}
+
+.comparison-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 0.9fr 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.comparison-row:first-child {
+  border-top: 0;
+}
+
+.comparison-row.header {
+  color: var(--muted);
+  background: #f0f5f2;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.comparison-row span:last-child {
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
 .fighter-identity {
   min-width: 0;
   display: inline-flex;
@@ -1018,6 +1106,10 @@ legend {
   padding: 22px;
 }
 
+.empty-state.inline {
+  margin: 0;
+}
+
 .empty-state h2 {
   margin-top: 0;
 }
@@ -1096,6 +1188,7 @@ legend {
   .two,
   .form-grid,
   .two-columns,
+  .analysis-layout,
   .fighter-preview-grid,
   .fighter-search-grid,
   .fighter-detail-head,
@@ -1139,5 +1232,13 @@ legend {
   .page-head h1,
   .result h1 {
     font-size: 2.35rem;
+  }
+
+  .comparison-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .comparison-row.header {
+    display: none;
   }
 }

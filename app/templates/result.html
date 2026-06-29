@@ -3,7 +3,11 @@
 <section class="result">
   <p class="eyebrow">Matchup outlook</p>
   <h1>{{ result.winner }}</h1>
-  <p class="lede">Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</p>
+  <p class="lede">{{ result.summary }}</p>
+  <div class="outlook-meta">
+    <span>Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</span>
+    <span>Comparison strength: {{ result.comparison_strength }}</span>
+  </div>
   <div class="probabilities">
     <div>
       <span class="fighter-identity">
@@ -23,11 +27,45 @@
   <a class="button" href="/predict">Run another analysis</a>
 </section>
 <section class="band">
-  <h2>Matchup factors</h2>
-  <div class="feature-table">
-    {% for key, value in result.features.items() %}
-      <div><span>{{ key | replace("_", " ") | title }}</span><strong>{{ value | round(3) }}</strong></div>
-    {% endfor %}
+  <div class="analysis-layout">
+    <div>
+      <h2>Key read</h2>
+      {% if result.insights %}
+        <div class="insight-grid">
+          {% for insight in result.insights %}
+            <article class="insight-card">
+              <span>{{ insight.label }}</span>
+              <strong>{{ insight.advantage }}</strong>
+              <p>{{ insight.detail }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state inline">
+          <h2>No measurable separation yet.</h2>
+          <p>Both saved profiles currently show the same comparison values. Add richer fighter statistics to produce a more decisive read.</p>
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <h2>Profile comparison</h2>
+      <div class="comparison-table">
+        <div class="comparison-row header">
+          <span>Factor</span>
+          <span>{{ fighter_a.name }}</span>
+          <span>{{ fighter_b.name }}</span>
+          <span>Edge</span>
+        </div>
+        {% for row in result.profile_rows %}
+          <div class="comparison-row">
+            <span>{{ row.label }}</span>
+            <strong>{{ row.a }}</strong>
+            <strong>{{ row.b }}</strong>
+            <span>{{ row.edge }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}

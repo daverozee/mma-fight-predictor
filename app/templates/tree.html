@@ -1,15 +1,30 @@
 {% extends "base.html" %}
 {% macro render_node(node) %}
-  <li>
+  <li class="{% if node.defeated %}has-children{% else %}is-leaf{% endif %}">
     <details open>
       <summary>
-        <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
-        <span>
-          <strong>{{ node.name }}</strong>
-          {% if node.bout_date or node.method %}
-            <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
-          {% endif %}
-        </span>
+        <span class="tree-toggle" aria-hidden="true"></span>
+        {% if node.id %}
+          <a class="tree-fighter-link" href="/fighters/{{ node.id }}">
+            <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
+            <span>
+              <strong>{{ node.name }}</strong>
+              {% if node.bout_date or node.method %}
+                <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
+              {% endif %}
+            </span>
+          </a>
+        {% else %}
+          <span class="tree-fighter-link tree-fighter-static">
+            <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
+            <span>
+              <strong>{{ node.name }}</strong>
+              {% if node.bout_date or node.method %}
+                <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
+              {% endif %}
+            </span>
+          </span>
+        {% endif %}
       </summary>
       {% if node.defeated %}
         <ul>
@@ -62,6 +77,10 @@
       <p>Opponent chains will appear here as verified bout history becomes available.</p>
     </div>
   {% elif tree %}
+    <div class="tree-actions" aria-label="Tree controls">
+      <button class="button secondary small" type="button" id="tree-expand-all">Expand all</button>
+      <button class="button secondary small" type="button" id="tree-collapse-all">Collapse all</button>
+    </div>
     <div class="tree-shell">
       <ul class="fighter-tree">
         {{ render_node(tree) }}
@@ -164,5 +183,24 @@
       searchTreeFighters();
     }
   });
+
+  document.querySelectorAll(".tree-fighter-link[href]").forEach((link) => {
+    link.addEventListener("click", (event) => event.stopPropagation());
+  });
+
+  const expandAll = document.getElementById("tree-expand-all");
+  const collapseAll = document.getElementById("tree-collapse-all");
+  if (expandAll && collapseAll) {
+    expandAll.addEventListener("click", () => {
+      document.querySelectorAll(".fighter-tree details").forEach((detail) => {
+        detail.open = true;
+      });
+    });
+    collapseAll.addEventListener("click", () => {
+      document.querySelectorAll(".fighter-tree details").forEach((detail, index) => {
+        detail.open = index === 0;
+      });
+    });
+  }
 </script>
 {% endblock %}

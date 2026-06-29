@@ -139,6 +139,12 @@ def test_tree_page_uses_searchable_fighter_picker() -> None:
         assert "tree-fighter-search" in response.text
         assert "<select" not in response.text
 
+        response = client.get("/tree?fighter_id=9407")
+        assert response.status_code == 200
+        assert "tree-expand-all" in response.text
+        assert "tree-collapse-all" in response.text
+        assert 'href="/fighters/9407"' in response.text
+
 
 def test_public_api_lists_fighters_and_predicts() -> None:
     with TestClient(app) as client:

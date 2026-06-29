@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     google_search_api_key: str | None = None
     google_search_engine_id: str | None = None
     sentiment_search_results: int = 5
+    fighter_article_results: int = 3
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

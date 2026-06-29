@@ -48,6 +48,30 @@
   </div>
 </section>
 <section class="band">
+  <div class="fighter-coverage-section">
+    <div>
+      <p class="eyebrow">Recent coverage</p>
+      <h2>Top search links</h2>
+    </div>
+    {% if article_links.available %}
+      <div class="fighter-article-grid">
+        {% for article in article_links.articles %}
+          <a class="fighter-article-card" href="{{ article.url }}" target="_blank" rel="noopener noreferrer">
+            <span>{{ article.source }}</span>
+            <strong>{{ article.title }}</strong>
+            {% if article.snippet %}<p>{{ article.snippet }}</p>{% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state inline">
+        <h2>Recent coverage is not available right now.</h2>
+        <p>Profile links will appear here when fresh public search results are available.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+<section class="band">
   <h2>Fight history</h2>
   {% if fight_result_count == 0 %}
     <div class="empty-state">

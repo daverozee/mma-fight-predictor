@@ -27,7 +27,7 @@ from app.ml.predictor import FightPredictor
 from app.models import User
 from app.odds_sites import load_odds_sites
 from app.rankings import load_rankings
-from app.sentiment import sample_matchup_sentiment
+from app.sentiment import sample_matchup_sentiment, search_fighter_article_links
 
 settings = get_settings()
 
@@ -204,6 +204,7 @@ def fighter_detail_page(
             "user": user,
             "fighter": fighter,
             "thumbnail_url": media_urls[fighter.name],
+            "article_links": fighter_article_links(fighter.name),
             "fight_result_count": fight_result_count(db),
             "tree": tree,
         },
@@ -530,6 +531,15 @@ def sentiment_for_matchup(
         api_key=settings.google_search_api_key,
         engine_id=settings.google_search_engine_id,
         results_per_fighter=settings.sentiment_search_results,
+    )
+
+
+def fighter_article_links(fighter_name: str) -> dict[str, object]:
+    return search_fighter_article_links(
+        fighter_name,
+        api_key=settings.google_search_api_key,
+        engine_id=settings.google_search_engine_id,
+        limit=settings.fighter_article_results,
     )
 
 

@@ -111,6 +111,57 @@ def sample_matchup_sentiment(
     }
 
 
+def search_fighter_article_links(
+    fighter_name: str,
+    api_key: str | None,
+    engine_id: str | None,
+    limit: int = 3,
+    search_fn: SearchFn | None = None,
+) -> dict[str, object]:
+    if not api_key or not engine_id:
+        return {"available": False, "status": "not_configured", "articles": []}
+
+    search = search_fn or google_search
+    try:
+        items = search(
+            api_key,
+            engine_id,
+            f'"{fighter_name}" MMA fighter news fight',
+            max(3, limit),
+        )
+    except (OSError, TimeoutError, ValueError, json.JSONDecodeError):
+        return {"available": False, "status": "error", "articles": []}
+
+    articles = article_links_from_items(items, limit)
+    return {
+        "available": bool(articles),
+        "status": "ready" if articles else "empty",
+        "articles": articles,
+    }
+
+
+def article_links_from_items(items: list[dict[str, object]], limit: int = 3) -> list[dict[str, str]]:
+    articles: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for item in items:
+        url = clean_text(item.get("link") or item.get("formattedUrl"))
+        title = clean_text(item.get("title"))
+        if not url or not title or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        articles.append(
+            {
+                "title": title,
+                "url": url,
+                "source": source_label(url),
+                "snippet": clean_text(item.get("snippet")),
+            }
+        )
+        if len(articles) >= limit:
+            break
+    return articles
+
+
 def sample_fighter_sentiment(
     fighter_name: str,
     api_key: str,

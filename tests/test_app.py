@@ -149,6 +149,8 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         response = client.get(f"/fighters/{fighters[0]['id']}")
         assert response.status_code == 200
         assert "Core profile" in response.text
+        assert "Recent coverage" in response.text
+        assert "Recent coverage is not available right now." in response.text
 
         response = client.post(
             "/predict/from-profiles",

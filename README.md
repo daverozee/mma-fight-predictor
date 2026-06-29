@@ -117,12 +117,22 @@ Import public Instagram profile links from Wikidata where they can be matched to
 python scripts/import_wikidata_instagram.py
 ```
 
+Discover additional Instagram links with Google Custom Search JSON API:
+
+```powershell
+$env:GOOGLE_SEARCH_API_KEY = "your-google-api-key"
+$env:GOOGLE_SEARCH_ENGINE_ID = "your-search-engine-id"
+python scripts/discover_social_links.py --limit 50 --dry-run
+python scripts/discover_social_links.py --limit 50
+```
+
 With Docker:
 
 ```powershell
 docker compose up -d --build
 docker compose exec -T web python scripts/import_ufcstats_features.py
 docker compose exec -T web python scripts/import_wikidata_instagram.py
+docker compose exec -T web python scripts/discover_social_links.py --limit 50 --dry-run
 ```
 
 Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local files or URLs, and map provider fields into profile fields. Source URLs and headers support environment placeholders such as `${BALLDONTLIE_API_KEY}`. Unmapped fields can be stored as external fighter features so the feature list can grow without changing the prediction schema every time a source adds a new stat.

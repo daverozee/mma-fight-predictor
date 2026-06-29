@@ -13,3 +13,4 @@ def test_normalize_instagram_url_accepts_handles_and_urls() -> None:
 def test_normalize_instagram_url_rejects_non_instagram_urls() -> None:
     assert normalize_instagram_url("https://example.com/fighter") is None
     assert normalize_instagram_url("not a handle") is None
+    assert normalize_instagram_url("https://www.instagram.com/p/ABC123/") is None

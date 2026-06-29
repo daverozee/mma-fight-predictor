@@ -14,6 +14,19 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_homepage_promotion_cards_link_to_organization_sites() -> None:
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert 'href="https://www.ufc.com/"' in response.text
+    assert 'href="https://pflmma.com/"' in response.text
+    assert 'href="https://www.onefc.com/"' in response.text
+    assert 'href="https://invictafc.com/"' in response.text
+    assert 'target="_blank"' in response.text
+    assert 'rel="noopener noreferrer"' in response.text
+
+
 def test_auth_and_prediction_flow() -> None:
     email = f"test-{uuid4()}@example.com"
     password = "good-password"

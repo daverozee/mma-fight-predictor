@@ -339,6 +339,15 @@ pre {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfbf8;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.promotion-card:hover,
+.promotion-card:focus {
+  border-color: rgba(22, 115, 86, 0.42);
+  background: #f7faf8;
+  transform: translateY(-1px);
 }
 
 .promotion-mark {

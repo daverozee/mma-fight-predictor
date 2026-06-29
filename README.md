@@ -91,6 +91,19 @@ python scripts/import_fight_results.py `
   --source-url "https://github.com/ThasankaK/UFC-Dataset-and-Model-Predictor"
 ```
 
+Import richer UFCStats-derived career features and fight aggregates:
+
+```powershell
+python scripts/import_ufcstats_features.py
+```
+
+With Docker:
+
+```powershell
+docker compose up -d --build
+docker compose exec -T web python scripts/import_ufcstats_features.py
+```
+
 Edit `app/data/source_catalog.json` to add CSV or JSON sources, point to local files or URLs, and map provider fields into profile fields. Source URLs and headers support environment placeholders such as `${BALLDONTLIE_API_KEY}`. Unmapped fields can be stored as external fighter features so the feature list can grow without changing the prediction schema every time a source adds a new stat.
 
 See `LIVE_FEEDS.md` for live API and scraping candidates.

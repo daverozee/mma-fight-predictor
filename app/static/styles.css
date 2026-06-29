@@ -1170,6 +1170,38 @@ legend {
   margin: 0 auto 16px;
 }
 
+.roster-pagination {
+  max-width: 1100px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.roster-pagination p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.roster-pagination div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-count {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.button.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .roster-table {
   margin-top: 0;
 }
@@ -1496,7 +1528,9 @@ legend {
 
 @media (max-width: 760px) {
   .topbar,
-  nav {
+  nav,
+  .roster-pagination,
+  .roster-pagination div {
     align-items: flex-start;
     flex-direction: column;
   }

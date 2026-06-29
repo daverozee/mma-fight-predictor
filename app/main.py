@@ -154,9 +154,12 @@ def fighters_page(
     request: Request,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=10, le=100),
 ) -> HTMLResponse:
-    _, fighters = search_fighters(db, limit=50)
+    total, fighters = search_fighters(db, limit=limit, offset=(page - 1) * limit)
     media_urls = fighter_thumbnail_urls(db, fighters)
+    total_pages = max((total + limit - 1) // limit, 1)
     return templates.TemplateResponse(
         request,
         "fighters.html",
@@ -165,6 +168,16 @@ def fighters_page(
             "fighters": fighters,
             "counts": fighter_data_counts(db),
             "media_urls": media_urls,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "start": ((page - 1) * limit) + 1 if total else 0,
+                "end": min(page * limit, total),
+                "previous_page": page - 1 if page > 1 else None,
+                "next_page": page + 1 if page < total_pages else None,
+            },
         },
     )
 

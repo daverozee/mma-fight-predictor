@@ -103,6 +103,13 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         response = client.get("/fighters")
         assert response.status_code == 200
         assert "Find a fighter" in response.text
+        assert "Page 1 of" in response.text
+        assert "Next" in response.text
+
+        response = client.get("/fighters?page=2&limit=10")
+        assert response.status_code == 200
+        assert "Page 2 of" in response.text
+        assert "Previous" in response.text
 
         response = client.get("/api/v1/fighters?limit=2")
         assert response.status_code == 200

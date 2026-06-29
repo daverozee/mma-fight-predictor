@@ -19,6 +19,22 @@
       </span>
     </label>
   </div>
+  <div class="roster-pagination" id="roster-pagination">
+    <p>Showing {{ "{:,}".format(pagination.start) }}-{{ "{:,}".format(pagination.end) }} of {{ "{:,}".format(pagination.total) }} fighters</p>
+    <div>
+      {% if pagination.previous_page %}
+        <a class="button secondary" href="/fighters?page={{ pagination.previous_page }}&limit={{ pagination.limit }}">Previous</a>
+      {% else %}
+        <span class="button secondary disabled">Previous</span>
+      {% endif %}
+      <span class="page-count">Page {{ pagination.page }} of {{ pagination.total_pages }}</span>
+      {% if pagination.next_page %}
+        <a class="button secondary" href="/fighters?page={{ pagination.next_page }}&limit={{ pagination.limit }}">Next</a>
+      {% else %}
+        <span class="button secondary disabled">Next</span>
+      {% endif %}
+    </div>
+  </div>
   <div class="fighter-table roster-table" id="fighter-roster-table">
     <div class="fighter-row header">
       <span>Name</span>
@@ -53,6 +69,9 @@
   const rosterInput = document.getElementById("fighter-roster-search");
   const rosterButton = document.getElementById("fighter-roster-search-button");
   const rosterResults = document.getElementById("fighter-roster-results");
+  const rosterPagination = document.getElementById("roster-pagination");
+  const originalRosterHtml = rosterResults.innerHTML;
+  const originalPaginationHtml = rosterPagination.innerHTML;
   let rosterTimeout;
 
   function rosterMessage(message) {
@@ -91,14 +110,17 @@
   async function searchRoster() {
     const term = rosterInput.value.trim();
     if (term.length < 2) {
-      rosterMessage("Type at least two letters.");
+      rosterResults.innerHTML = originalRosterHtml;
+      rosterPagination.innerHTML = originalPaginationHtml;
       return;
     }
 
     rosterMessage("Searching roster...");
+    rosterPagination.innerHTML = `<p>Searching all fighters...</p>`;
     const response = await fetch(`/api/v1/fighters?search=${encodeURIComponent(term)}&limit=25`);
     const payload = await response.json();
     rosterResults.innerHTML = "";
+    rosterPagination.innerHTML = `<p>${payload.total.toLocaleString()} matches found</p>`;
 
     if (!payload.fighters.length) {
       rosterMessage("No fighters found.");

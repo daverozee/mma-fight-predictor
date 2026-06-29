@@ -127,6 +127,14 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert "UFC" in response.text
         assert "Open source" in response.text
 
+        response = client.get("/odds-sites")
+        assert response.status_code == 200
+        assert "Betting odds sources" in response.text
+        assert "DraftKings" in response.text
+        assert "BestFightOdds" in response.text
+        assert "not betting advice" in response.text
+        assert 'target="_blank"' in response.text
+
         response = client.get("/fighters?page=2&limit=10")
         assert response.status_code == 200
         assert "Page 2 of" in response.text

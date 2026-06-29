@@ -1,0 +1,115 @@
+{
+  "updated": "2026-06-29",
+  "notice": "Odds availability depends on location, age, licensing, and event schedule. This directory is for research and line comparison, not betting advice.",
+  "sections": [
+    {
+      "name": "Sportsbooks",
+      "summary": "Operator pages where MMA or UFC markets are commonly listed when events are available.",
+      "sites": [
+        {
+          "name": "DraftKings",
+          "url": "https://sportsbook.draftkings.com/leagues/mma/ufc",
+          "coverage": "UFC odds, fight lines, props, and live betting markets.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "FanDuel",
+          "url": "https://sportsbook.fanduel.com/mma",
+          "coverage": "MMA odds, moneylines, props, and event markets.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "BetMGM",
+          "url": "https://www.betmgm.com/en/sports/mma-45",
+          "coverage": "Mixed martial arts odds, including UFC event markets.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "Caesars Sportsbook",
+          "url": "https://sportsbook.caesars.com/",
+          "coverage": "Sportsbook markets with UFC odds listed among popular odds.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "BetRivers",
+          "url": "https://nj.betrivers.com/pages/sports/mma.html",
+          "coverage": "MMA betting page with odds guidance and fight-market access.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "bet365",
+          "url": "https://www.bet365.com/hub/en-gb/mma",
+          "coverage": "MMA markets, in-play fights, and UFC odds hub.",
+          "region": "Market-dependent",
+          "kind": "sportsbook"
+        },
+        {
+          "name": "Fanatics Sportsbook",
+          "url": "https://betfanatics.com/",
+          "coverage": "Sportsbook home for event markets, promotions, and betting access.",
+          "region": "US, state-dependent",
+          "kind": "sportsbook"
+        }
+      ]
+    },
+    {
+      "name": "Odds Comparison",
+      "summary": "Comparison and odds-tracking sites useful for reviewing market movement across multiple books.",
+      "sites": [
+        {
+          "name": "BestFightOdds",
+          "url": "https://www.bestfightodds.com/",
+          "coverage": "UFC and MMA odds comparison, archives, and opening-line movement.",
+          "region": "Global reference",
+          "kind": "comparison"
+        },
+        {
+          "name": "OddsChecker",
+          "url": "https://www.oddschecker.com/us/boxing-mma/ufc-mma",
+          "coverage": "UFC odds comparison across major sportsbooks.",
+          "region": "US comparison",
+          "kind": "comparison"
+        },
+        {
+          "name": "Fight Odds",
+          "url": "https://fightodds.io/",
+          "coverage": "MMA betting odds, news, opening lines, and betting tools.",
+          "region": "Global reference",
+          "kind": "comparison"
+        },
+        {
+          "name": "Action Network",
+          "url": "https://www.actionnetwork.com/ufc/odds",
+          "coverage": "UFC odds boards, moneylines, totals, and sportsbook comparisons.",
+          "region": "US comparison",
+          "kind": "comparison"
+        },
+        {
+          "name": "Covers",
+          "url": "https://www.covers.com/sport/mma/ufc/odds",
+          "coverage": "UFC odds, line movement, and matchup betting boards.",
+          "region": "US comparison",
+          "kind": "comparison"
+        }
+      ]
+    },
+    {
+      "name": "Fight Context",
+      "summary": "Fight-card pages that help users identify upcoming bouts before comparing odds.",
+      "sites": [
+        {
+          "name": "ESPN MMA Fightcenter",
+          "url": "https://www.espn.com/mma/fightcenter",
+          "coverage": "Upcoming fight cards, fighter records, and event context.",
+          "region": "Global reference",
+          "kind": "context"
+        }
+      ]
+    }
+  ]
+}

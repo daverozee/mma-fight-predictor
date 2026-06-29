@@ -1435,6 +1435,100 @@ legend {
   text-decoration: underline;
 }
 
+.odds-band {
+  display: grid;
+  gap: 24px;
+}
+
+.odds-notice,
+.odds-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.odds-notice {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.odds-notice p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.6;
+}
+
+.odds-layout,
+.odds-section {
+  display: grid;
+}
+
+.odds-layout {
+  gap: 28px;
+}
+
+.odds-section {
+  gap: 14px;
+}
+
+.odds-site-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.odds-site-card {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.odds-site-card:hover,
+.odds-site-card:focus {
+  border-color: rgba(22, 115, 86, 0.42);
+  background: #f7faf8;
+  box-shadow: 0 10px 24px rgba(18, 28, 24, 0.08);
+  transform: translateY(-1px);
+}
+
+.odds-site-card h3 {
+  margin: 10px 0 8px;
+  font-size: 1.35rem;
+}
+
+.odds-site-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.odds-kind,
+.odds-region {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.odds-kind {
+  color: var(--accent-strong);
+}
+
 .imported-fighter-row {
   display: grid;
   grid-template-columns: 1.2fr 1.8fr 0.7fr;
@@ -1661,6 +1755,7 @@ legend {
   .ranking-source-grid,
   .ranking-source-card,
   .ranking-division-grid,
+  .odds-site-grid,
   .feed-overview,
   .feed-stats,
   .feed-map,

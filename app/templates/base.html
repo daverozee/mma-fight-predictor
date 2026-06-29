@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title or "MMA Fight Predictor" }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v=visual-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v=visual-2">
   </head>
   <body>
     <header class="topbar">
@@ -14,6 +14,7 @@
           <a href="/dashboard">Dashboard</a>
           <a href="/fighters">Fighters</a>
           <a href="/rankings">Rankings</a>
+          <a href="/odds-sites">Odds</a>
           <a href="/predict">Predict</a>
           <a href="/tree">Tree</a>
           <form method="post" action="/logout">

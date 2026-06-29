@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head compact">
+  <p class="eyebrow">Odds directory</p>
+  <h1>Betting odds sources</h1>
+  <p>Browse sportsbook and odds-comparison pages before choosing fighters to compare.</p>
+  <div class="feed-stats fighter-stats" aria-label="Odds source totals">
+    <div><strong>{{ odds_sites.sections | length }}</strong><span>Source groups</span></div>
+    <div><strong>{{ odds_sites.updated }}</strong><span>Directory date</span></div>
+  </div>
+</section>
+<section class="band odds-band">
+  <div class="odds-notice">
+    <p>{{ odds_sites.notice }}</p>
+  </div>
+  <div class="odds-layout">
+    {% for section in odds_sites.sections %}
+      <section class="odds-section">
+        <div class="ranking-promotion-head">
+          <p class="eyebrow">{{ section.name }}</p>
+          <h2>{{ section.summary }}</h2>
+        </div>
+        <div class="odds-site-grid">
+          {% for site in section.sites %}
+            <a class="odds-site-card" href="{{ site.url }}" target="_blank" rel="noopener noreferrer">
+              <div>
+                <span class="odds-kind">{{ site.kind }}</span>
+                <h3>{{ site.name }}</h3>
+                <p>{{ site.coverage }}</p>
+              </div>
+              <span class="odds-region">{{ site.region }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

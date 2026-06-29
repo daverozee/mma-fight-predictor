@@ -25,6 +25,7 @@ from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
+from app.odds_sites import load_odds_sites
 from app.rankings import load_rankings
 
 settings = get_settings()
@@ -221,6 +222,15 @@ def rankings_page(
             "user": user,
             "rankings": load_rankings(db),
         },
+    )
+
+
+@app.get("/odds-sites", response_class=HTMLResponse)
+def odds_sites_page(request: Request, user: User = Depends(require_user)) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "odds_sites.html",
+        {"user": user, "odds_sites": load_odds_sites()},
     )
 
 

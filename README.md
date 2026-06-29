@@ -114,6 +114,7 @@ python scripts/import_ufcstats_features.py
 Import public Instagram profile links from Wikidata where they can be matched to roster names:
 
 ```powershell
+python scripts/import_social_links.py
 python scripts/import_wikidata_instagram.py
 ```
 
@@ -131,6 +132,7 @@ With Docker:
 ```powershell
 docker compose up -d --build
 docker compose exec -T web python scripts/import_ufcstats_features.py
+docker compose exec -T web python scripts/import_social_links.py
 docker compose exec -T web python scripts/import_wikidata_instagram.py
 docker compose exec -T web python scripts/discover_social_links.py --limit 50 --dry-run
 ```

@@ -28,15 +28,33 @@
   <p>Pick a fighter to expand the chain of opponents they defeated, then follow each defeated fighter's own wins as nested branches.</p>
 </section>
 <section class="band">
-  <form class="matchup-form tree-picker" method="get" action="/tree">
+  <form class="matchup-form tree-picker" method="get" action="/tree" id="tree-picker-form">
     <label>Root fighter
-      <select name="fighter_id">
-        {% for fighter in fighters %}
-          <option value="{{ fighter.id }}" {% if selected and fighter.id == selected.id %}selected{% endif %}>{{ fighter.name }} - {{ fighter.weight_class }}</option>
-        {% endfor %}
-      </select>
+      <span class="search-control">
+        <input
+          id="tree-fighter-search"
+          type="search"
+          autocomplete="off"
+          placeholder="Search by fighter name"
+          value="{{ selected.name if selected else '' }}"
+        >
+        <button class="button secondary search-button" type="button" id="tree-fighter-search-button">Search</button>
+      </span>
     </label>
-    <button class="button" type="submit">Open tree</button>
+    <input id="tree-selected-id" type="hidden" name="fighter_id" value="{{ selected.id if selected else '' }}">
+    <div class="fighter-result-list" id="tree-search-results"></div>
+    <div class="fighter-select-preview {% if not selected %}empty{% endif %}" id="tree-selected-preview">
+      {% if selected and tree %}
+        <img class="fighter-thumb large" src="{{ tree.thumbnail_url }}" alt="">
+        <span>
+          <strong>{{ selected.name }}</strong>
+          <small>{{ selected.weight_class }} - {{ selected.wins | round(0) | int }}-{{ selected.losses | round(0) | int }}</small>
+        </span>
+      {% else %}
+        <span><strong>No fighter selected</strong><small>Search and choose a root fighter.</small></span>
+      {% endif %}
+    </div>
+    <button class="button" type="submit" id="tree-submit" {% if not selected %}disabled{% endif %}>Open tree</button>
   </form>
   {% if fight_result_count == 0 %}
     <div class="empty-state">
@@ -51,4 +69,100 @@
     </div>
   {% endif %}
 </section>
+<script>
+  const treeInput = document.getElementById("tree-fighter-search");
+  const treeButton = document.getElementById("tree-fighter-search-button");
+  const treeResults = document.getElementById("tree-search-results");
+  const treeSelectedId = document.getElementById("tree-selected-id");
+  const treeSelectedPreview = document.getElementById("tree-selected-preview");
+  const treeSubmit = document.getElementById("tree-submit");
+  let treeSearchTimeout;
+  let selectedTreeName = treeInput.value;
+
+  function updateTreeSubmit() {
+    treeSubmit.disabled = !treeSelectedId.value;
+  }
+
+  function treeMessage(message) {
+    treeResults.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "fighter-result-empty";
+    empty.textContent = message;
+    treeResults.appendChild(empty);
+  }
+
+  function selectTreeFighter(fighter) {
+    selectedTreeName = fighter.name;
+    treeSelectedId.value = fighter.id;
+    treeInput.value = fighter.name;
+    treeResults.innerHTML = "";
+    treeSelectedPreview.classList.remove("empty");
+    treeSelectedPreview.innerHTML = "";
+
+    const image = document.createElement("img");
+    image.className = "fighter-thumb large";
+    image.src = fighter.thumbnail_url;
+    image.alt = "";
+
+    const text = document.createElement("span");
+    const name = document.createElement("strong");
+    const meta = document.createElement("small");
+    name.textContent = fighter.name;
+    meta.textContent = `${fighter.weight_class} - ${Math.round(fighter.wins)}-${Math.round(fighter.losses)}`;
+    text.append(name, meta);
+    treeSelectedPreview.append(image, text);
+    updateTreeSubmit();
+  }
+
+  async function searchTreeFighters() {
+    const term = treeInput.value.trim();
+    if (term.length < 2) {
+      treeMessage("Type at least two letters.");
+      return;
+    }
+
+    treeMessage("Searching roster...");
+    const response = await fetch(`/api/v1/fighters?search=${encodeURIComponent(term)}&limit=10`);
+    const payload = await response.json();
+    treeResults.innerHTML = "";
+
+    if (!payload.fighters.length) {
+      treeMessage("No fighters found.");
+      return;
+    }
+
+    payload.fighters.forEach((fighter) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fighter-result-option";
+      button.innerHTML = `
+        <img class="fighter-thumb" src="${fighter.thumbnail_url}" alt="">
+        <span><strong></strong><small></small></span>
+      `;
+      button.querySelector("strong").textContent = fighter.name;
+      button.querySelector("small").textContent = `${fighter.weight_class} - ${Math.round(fighter.wins)}-${Math.round(fighter.losses)}`;
+      button.addEventListener("click", () => selectTreeFighter(fighter));
+      treeResults.appendChild(button);
+    });
+  }
+
+  treeButton.addEventListener("click", searchTreeFighters);
+  treeInput.addEventListener("input", () => {
+    if (selectedTreeName && treeInput.value !== selectedTreeName) {
+      selectedTreeName = "";
+      treeSelectedId.value = "";
+      treeSelectedPreview.classList.add("empty");
+      treeSelectedPreview.innerHTML = "<span><strong>No fighter selected</strong><small>Search and choose a root fighter.</small></span>";
+      updateTreeSubmit();
+    }
+    clearTimeout(treeSearchTimeout);
+    treeSearchTimeout = setTimeout(searchTreeFighters, 250);
+  });
+  treeInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchTreeFighters();
+    }
+  });
+</script>
 {% endblock %}

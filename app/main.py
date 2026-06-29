@@ -15,7 +15,6 @@ from app.database import get_db, init_db
 from app.fighters import (
     fighter_data_counts,
     get_fighter,
-    list_fighters,
     profile_to_features,
     promote_imported_fighters_to_profiles,
     search_fighters,
@@ -340,15 +339,17 @@ def tree_page(
     db: Session = Depends(get_db),
     fighter_id: int | None = Query(default=None),
 ) -> HTMLResponse:
-    fighters = list_fighters(db)
-    selected = get_fighter(db, fighter_id) if fighter_id else (fighters[0] if fighters else None)
-    tree = build_defeat_tree(db, selected) if selected and fight_result_count(db) else None
+    selected = get_fighter(db, fighter_id) if fighter_id else None
+    tree = (
+        build_defeat_tree(db, selected, depth=2, max_children=30)
+        if selected and fight_result_count(db)
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "tree.html",
         {
             "user": user,
-            "fighters": fighters,
             "selected": selected,
             "tree": tree,
             "fight_result_count": fight_result_count(db),

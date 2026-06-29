@@ -121,6 +121,25 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert "Matchup outlook" in response.text
 
 
+def test_tree_page_uses_searchable_fighter_picker() -> None:
+    email = f"tree-{uuid4()}@example.com"
+    password = "good-password"
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/register",
+            data={"email": email, "password": password},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        response = client.get("/tree")
+        assert response.status_code == 200
+        assert "Search by fighter name" in response.text
+        assert "tree-fighter-search" in response.text
+        assert "<select" not in response.text
+
+
 def test_public_api_lists_fighters_and_predicts() -> None:
     with TestClient(app) as client:
         response = client.get("/api/v1/fighters?limit=2")

@@ -1,0 +1,122 @@
+{
+  "updated": "2026-06-29",
+  "promotions": [
+    {
+      "name": "UFC",
+      "source_label": "Official rankings",
+      "source_url": "https://www.ufc.com/rankings",
+      "summary": "Official UFC ranking page for division and pound-for-pound browsing.",
+      "divisions": [
+        {
+          "name": "All Meta Rankings",
+          "entries": [
+            {"rank": "1", "name": "Ilia Topuria"},
+            {"rank": "2", "name": "Arman Tsarukyan"},
+            {"rank": "3", "name": "Charles Oliveira"},
+            {"rank": "4", "name": "Max Holloway"},
+            {"rank": "5", "name": "Benoit Saint Denis"}
+          ]
+        },
+        {
+          "name": "Heavyweight",
+          "entries": [
+            {"rank": "C", "name": "Tom Aspinall"},
+            {"rank": "1", "name": "Ciryl Gane"},
+            {"rank": "2", "name": "Alexander Volkov"},
+            {"rank": "3", "name": "Sergei Pavlovich"},
+            {"rank": "4", "name": "Waldo Cortes-Acosta"}
+          ]
+        },
+        {
+          "name": "Lightweight",
+          "entries": [
+            {"rank": "C", "name": "Ilia Topuria"},
+            {"rank": "1", "name": "Islam Makhachev"},
+            {"rank": "2", "name": "Arman Tsarukyan"},
+            {"rank": "3", "name": "Max Holloway"},
+            {"rank": "4", "name": "Charles Oliveira"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PFL / Bellator",
+      "source_label": "Official fighter rankings",
+      "source_url": "https://pflmma.com/rankings",
+      "summary": "Official PFL rankings, including champions and top contenders across divisions.",
+      "divisions": [
+        {
+          "name": "Men's P4P",
+          "entries": [
+            {"rank": "1", "name": "Usman Nurmagomedov"},
+            {"rank": "2", "name": "Corey Anderson"},
+            {"rank": "3", "name": "Vadim Nemkov"},
+            {"rank": "4", "name": "Costello Van Steenis"},
+            {"rank": "5", "name": "Thad Jean"},
+            {"rank": "6", "name": "Johnny Eblen"},
+            {"rank": "7", "name": "Shamil Musaev"},
+            {"rank": "8", "name": "AJ McKee"},
+            {"rank": "9", "name": "Timur Khizriev"}
+          ]
+        },
+        {
+          "name": "Lightweight",
+          "entries": [
+            {"rank": "C", "name": "Usman Nurmagomedov"},
+            {"rank": "1", "name": "Gadzhi Rabadanov"},
+            {"rank": "2", "name": "Alfie Davis"},
+            {"rank": "3", "name": "Archie Colgan"},
+            {"rank": "4", "name": "Alexander Shabliy"},
+            {"rank": "5", "name": "Paul Hughes"}
+          ]
+        },
+        {
+          "name": "Heavyweight",
+          "entries": [
+            {"rank": "C", "name": "Vadim Nemkov"},
+            {"rank": "1", "name": "Oleg Popov"},
+            {"rank": "2", "name": "Sergei Bilostenniy"},
+            {"rank": "3", "name": "Denis Goltsov"},
+            {"rank": "4", "name": "Alexandr Romanov"},
+            {"rank": "5", "name": "Slim Trabelsi"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ONE",
+      "source_label": "Athlete rankings",
+      "source_url": "https://www.onefc.com/rankings/",
+      "summary": "ONE's official athlete rankings page. ONE notes rankings are being refreshed with its 2026 schedule.",
+      "divisions": []
+    },
+    {
+      "name": "RIZIN",
+      "source_label": "Official fighters",
+      "source_url": "https://jp.rizinff.com/_tags/Fighter",
+      "summary": "Official RIZIN fighter directory for browsing leading roster names.",
+      "divisions": []
+    },
+    {
+      "name": "Cage Warriors",
+      "source_label": "Official fighters",
+      "source_url": "https://www.cagewarriors.com/fighters/",
+      "summary": "Official Cage Warriors fighter directory for promotion-level browsing.",
+      "divisions": []
+    },
+    {
+      "name": "LFA",
+      "source_label": "Official roster",
+      "source_url": "https://www.lfa.com/fighters",
+      "summary": "Official LFA fighter roster for finding established and rising contenders.",
+      "divisions": []
+    },
+    {
+      "name": "Invicta FC",
+      "source_label": "Official athletes",
+      "source_url": "https://invictafc.com/athletes/",
+      "summary": "Official Invicta FC athlete directory for browsing top women's MMA talent.",
+      "divisions": []
+    }
+  ]
+}

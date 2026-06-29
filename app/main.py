@@ -25,6 +25,7 @@ from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
+from app.rankings import load_rankings
 
 settings = get_settings()
 
@@ -203,6 +204,22 @@ def fighter_detail_page(
             "thumbnail_url": media_urls[fighter.name],
             "fight_result_count": fight_result_count(db),
             "tree": tree,
+        },
+    )
+
+
+@app.get("/rankings", response_class=HTMLResponse)
+def rankings_page(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "rankings.html",
+        {
+            "user": user,
+            "rankings": load_rankings(db),
         },
     )
 

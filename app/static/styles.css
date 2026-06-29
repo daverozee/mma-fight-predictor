@@ -1333,6 +1333,101 @@ legend {
   overflow: auto;
 }
 
+.rankings-band {
+  display: grid;
+  gap: 24px;
+}
+
+.ranking-source-grid,
+.rankings-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.ranking-source-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.ranking-source-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.ranking-source-card h2,
+.ranking-promotion-head h2 {
+  margin: 0;
+}
+
+.ranking-source-card p {
+  margin-bottom: 0;
+}
+
+.ranking-source-meta {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.ranking-source-meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ranking-promotion {
+  display: grid;
+  gap: 14px;
+}
+
+.ranking-division-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ranking-division-card h3 {
+  margin: 0 0 14px;
+}
+
+.ranking-list {
+  display: grid;
+}
+
+.ranking-row {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+
+.ranking-row:first-child {
+  border-top: 0;
+}
+
+.rank-number {
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.ranking-row a {
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.ranking-row a:hover,
+.ranking-row a:focus {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
 .imported-fighter-row {
   display: grid;
   grid-template-columns: 1.2fr 1.8fr 0.7fr;
@@ -1556,6 +1651,9 @@ legend {
   .fighter-detail-head,
   .fighter-detail-grid,
   .fighter-row,
+  .ranking-source-grid,
+  .ranking-source-card,
+  .ranking-division-grid,
   .feed-overview,
   .feed-stats,
   .feed-map,

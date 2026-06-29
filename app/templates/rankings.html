@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head compact">
+  <p class="eyebrow">Ranking browser</p>
+  <h1>Organization rankings</h1>
+  <p>Browse official ranking sources and ranked fighter snapshots before choosing high-level matchups to compare.</p>
+  <div class="feed-stats fighter-stats" aria-label="Ranking source totals">
+    <div><strong>{{ rankings.promotions | length }}</strong><span>Organizations</span></div>
+    <div><strong>{{ rankings.updated }}</strong><span>Snapshot date</span></div>
+  </div>
+</section>
+<section class="band rankings-band">
+  <div class="ranking-source-grid">
+    {% for promotion in rankings.promotions %}
+      <article class="ranking-source-card">
+        <div>
+          <p class="eyebrow">{{ promotion.source_label }}</p>
+          <h2>{{ promotion.name }}</h2>
+          <p>{{ promotion.summary }}</p>
+        </div>
+        <div class="ranking-source-meta">
+          {% if promotion.ranked_count %}
+            <span>{{ promotion.ranked_count }} ranked names</span>
+          {% else %}
+            <span>Official source</span>
+          {% endif %}
+          <a class="button secondary" href="{{ promotion.source_url }}" target="_blank" rel="noopener noreferrer">Open source</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+<section class="band rankings-band">
+  <div class="rankings-layout">
+    {% for promotion in rankings.promotions %}
+      {% if promotion.divisions %}
+        <section class="ranking-promotion">
+          <div class="ranking-promotion-head">
+            <p class="eyebrow">{{ promotion.name }}</p>
+            <h2>{{ promotion.source_label }}</h2>
+          </div>
+          <div class="ranking-division-grid">
+            {% for division in promotion.divisions %}
+              <article class="ranking-division-card">
+                <h3>{{ division.name }}</h3>
+                <div class="ranking-list">
+                  {% for entry in division.entries %}
+                    <div class="ranking-row">
+                      <span class="rank-number">{{ entry.rank }}</span>
+                      {% if entry.fighter_id %}
+                        <a href="/fighters/{{ entry.fighter_id }}">{{ entry.name }}</a>
+                      {% else %}
+                        <span>{{ entry.name }}</span>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

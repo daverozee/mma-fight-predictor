@@ -17,8 +17,8 @@ def test_open_catalog_imports_csv_and_json_sources(tmp_path: Path) -> None:
             [
                 "name,age,height_cm,reach_cm,wins,losses,ko_rate,submission_rate,"
                 "takedown_accuracy,takedown_defense,strikes_landed_per_min,"
-                "strikes_absorbed_per_min,camp",
-                "Test Striker,28,180,184,12,2,0.5,0.1,0.4,0.7,5.2,3.0,Sharp Gym",
+                "strikes_absorbed_per_min,instagram,camp",
+                "Test Striker,28,180,184,12,2,0.5,0.1,0.4,0.7,5.2,3.0,@teststriker,Sharp Gym",
             ]
         ),
         encoding="utf-8",
@@ -61,6 +61,7 @@ def test_open_catalog_imports_csv_and_json_sources(tmp_path: Path) -> None:
                             "takedown_defense": "takedown_defense",
                             "strikes_landed_per_min": "strikes_landed_per_min",
                             "strikes_absorbed_per_min": "strikes_absorbed_per_min",
+                            "instagram_url": "instagram",
                         },
                         "extra_feature_mode": "all_unmapped",
                     },
@@ -97,6 +98,7 @@ def test_open_catalog_imports_csv_and_json_sources(tmp_path: Path) -> None:
     assert result.records_seen == 2
     assert result.profiles_created == 1
     assert profile is not None
+    assert profile.instagram_url == "https://www.instagram.com/teststriker/"
     assert {feature.feature_name for feature in features} >= {
         "test_csv_camp",
         "test_json_elo",

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.ml.features import FighterFeatures
 from app.models import FighterExternalFeature, FighterProfile
+from app.social import normalize_instagram_url
 
 PROFILE_COLUMNS = [
     "name",
@@ -163,6 +164,7 @@ def provisional_profile_payload(name: str, features: dict[str, str | float]) -> 
         "takedown_defense": AVERAGE_PROFILE_VALUES["takedown_defense"],
         "strikes_landed_per_min": AVERAGE_PROFILE_VALUES["strikes_landed_per_min"],
         "strikes_absorbed_per_min": AVERAGE_PROFILE_VALUES["strikes_absorbed_per_min"],
+        "instagram_url": first_instagram_url(features),
         "source": "provisional-live-feed",
     }
 
@@ -200,6 +202,15 @@ def weight_class_name(value: str | float | None) -> str | None:
     if not isinstance(value, str) or not value:
         return None
     return WEIGHT_CLASS_NAMES.get(value.upper(), value)
+
+
+def first_instagram_url(features: dict[str, str | float]) -> str | None:
+    for key, value in features.items():
+        if "instagram" in key.lower():
+            url = normalize_instagram_url(value)
+            if url:
+                return url
+    return None
 
 
 def get_fighter(db: Session, fighter_id: int) -> FighterProfile | None:
@@ -257,7 +268,7 @@ def seed_sample_fighters(db: Session) -> int:
 
 
 def _row_to_payload(row: dict[str, str], source: str) -> dict[str, str | float]:
-    return {
+    payload: dict[str, str | float] = {
         "name": row["name"].strip(),
         "weight_class": row["weight_class"].strip() or "Unknown",
         "age": float(row["age"]),
@@ -273,3 +284,7 @@ def _row_to_payload(row: dict[str, str], source: str) -> dict[str, str | float]:
         "strikes_absorbed_per_min": float(row["strikes_absorbed_per_min"]),
         "source": source,
     }
+    instagram_url = normalize_instagram_url(row.get("instagram_url") or row.get("instagram"))
+    if instagram_url:
+        payload["instagram_url"] = instagram_url
+    return payload

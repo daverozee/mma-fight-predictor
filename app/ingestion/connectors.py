@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.ml.features import FighterFeatures
 from app.models import FighterExternalFeature, FighterProfile, SourceImportRun
+from app.social import normalize_instagram_url
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CATALOG_PATH = ROOT / "app" / "data" / "source_catalog.json"
@@ -37,8 +38,9 @@ PROFILE_FIELDS = {
     "takedown_defense",
     "strikes_landed_per_min",
     "strikes_absorbed_per_min",
+    "instagram_url",
 }
-REQUIRED_PROFILE_FIELDS = PROFILE_FIELDS - {"weight_class"}
+REQUIRED_PROFILE_FIELDS = PROFILE_FIELDS - {"weight_class", "instagram_url"}
 
 
 @dataclass(frozen=True)
@@ -261,7 +263,9 @@ def profile_payload(source: dict[str, Any], record: dict[str, Any]) -> dict[str,
         if is_blank(value) and field in defaults:
             value = defaults[field]
         if not is_blank(value):
-            payload[field] = coerce_profile_value(field, value)
+            coerced = coerce_profile_value(field, value)
+            if not is_blank(coerced):
+                payload[field] = coerced
 
     if "name" in payload:
         payload["name"] = str(payload["name"]).strip()
@@ -360,9 +364,11 @@ def resolve_value(spec: Any, record: dict[str, Any]) -> Any:
     return None
 
 
-def coerce_profile_value(field: str, value: Any) -> str | float:
+def coerce_profile_value(field: str, value: Any) -> str | float | None:
     if field in {"name", "weight_class"}:
         return str(value).strip()
+    if field == "instagram_url":
+        return normalize_instagram_url(value)
     return float(value)
 
 

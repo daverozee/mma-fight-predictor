@@ -193,6 +193,11 @@ button {
   color: var(--accent);
 }
 
+.button.social-button {
+  border-color: #d8c2ca;
+  color: #7b284a;
+}
+
 .topbar .button.secondary,
 .hero .button.secondary {
   color: #fff;

@@ -34,6 +34,7 @@ class FighterProfile(Base):
     takedown_defense: Mapped[float] = mapped_column(Float, nullable=False)
     strikes_landed_per_min: Mapped[float] = mapped_column(Float, nullable=False)
     strikes_absorbed_per_min: Mapped[float] = mapped_column(Float, nullable=False)
+    instagram_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     source: Mapped[str] = mapped_column(String(120), nullable=False, default="sample")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

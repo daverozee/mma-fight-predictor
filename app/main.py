@@ -495,5 +495,6 @@ def serialize_fighter(fighter: object, thumbnail_url: str | None = None) -> dict
         "takedown_defense": fighter.takedown_defense,
         "strikes_landed_per_min": fighter.strikes_landed_per_min,
         "strikes_absorbed_per_min": fighter.strikes_absorbed_per_min,
+        "instagram_url": fighter.instagram_url,
         "source": fighter.source,
     }

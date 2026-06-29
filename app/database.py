@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
@@ -34,3 +34,16 @@ def init_db() -> None:
     from app import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    ensure_sqlite_schema()
+
+
+def ensure_sqlite_schema() -> None:
+    if not settings.database_url.startswith("sqlite"):
+        return
+    with engine.begin() as connection:
+        columns = {
+            row["name"]
+            for row in connection.execute(text("PRAGMA table_info(fighter_profiles)")).mappings()
+        }
+        if "instagram_url" not in columns:
+            connection.execute(text("ALTER TABLE fighter_profiles ADD COLUMN instagram_url TEXT"))

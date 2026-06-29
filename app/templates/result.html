@@ -1,32 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="result">
-  <p class="eyebrow">Matchup outlook</p>
-  <h1>{{ result.winner }}</h1>
-  <p class="lede">{{ result.summary }}</p>
-  <div class="outlook-meta">
-    <span>Estimated confidence: {{ (result.confidence * 100) | round(1) }}%</span>
-    <span>Comparison strength: {{ result.comparison_strength }}</span>
-  </div>
-  <div class="probabilities">
-    <div>
-      <span class="fighter-identity">
-        <img class="fighter-thumb" src="{{ fighter_a_thumbnail }}" alt="">
-        <span>{{ fighter_a.name }}</span>
-      </span>
-      <strong>{{ (result.probability_a * 100) | round(1) }}%</strong>
+<section class="fight-outlook">
+  <div class="fight-outlook-inner">
+    <div class="fight-outlook-copy">
+      <p class="eyebrow">Matchup outlook</p>
+      <h1>{{ result.winner }}</h1>
+      <p class="lede">{{ result.summary }}</p>
+      <div class="outlook-meta">
+        <span>Confidence {{ (result.confidence * 100) | round(1) }}%</span>
+        <span>{{ result.comparison_strength }} comparison</span>
+      </div>
+      <a class="button" href="/predict">Run another analysis</a>
     </div>
-    <div>
-      <span class="fighter-identity">
-        <img class="fighter-thumb" src="{{ fighter_b_thumbnail }}" alt="">
-        <span>{{ fighter_b.name }}</span>
-      </span>
-      <strong>{{ (result.probability_b * 100) | round(1) }}%</strong>
+    <div class="fight-card-stage" aria-label="Fight probability card">
+      <article class="corner-card red-corner">
+        <span class="corner-label">Red corner</span>
+        <img class="fighter-portrait" src="{{ fighter_a_thumbnail }}" alt="">
+        <h2>{{ fighter_a.name }}</h2>
+        <p>{{ fighter_a.wins | round(0) | int }}-{{ fighter_a.losses | round(0) | int }} record</p>
+        <strong>{{ (result.probability_a * 100) | round(1) }}%</strong>
+        <div class="probability-track"><span style="width: {{ (result.probability_a * 100) | round(1) }}%"></span></div>
+      </article>
+      <div class="versus-chip">VS</div>
+      <article class="corner-card blue-corner">
+        <span class="corner-label">Blue corner</span>
+        <img class="fighter-portrait" src="{{ fighter_b_thumbnail }}" alt="">
+        <h2>{{ fighter_b.name }}</h2>
+        <p>{{ fighter_b.wins | round(0) | int }}-{{ fighter_b.losses | round(0) | int }} record</p>
+        <strong>{{ (result.probability_b * 100) | round(1) }}%</strong>
+        <div class="probability-track"><span style="width: {{ (result.probability_b * 100) | round(1) }}%"></span></div>
+      </article>
     </div>
   </div>
-  <a class="button" href="/predict">Run another analysis</a>
 </section>
-<section class="band">
+<section class="band result-analysis-band">
   <div class="analysis-layout">
     <div>
       <h2>Key read</h2>
@@ -61,7 +68,7 @@
             <span>{{ row.label }}</span>
             <strong>{{ row.a }}</strong>
             <strong>{{ row.b }}</strong>
-            <span>{{ row.edge }}</span>
+            <span><span class="edge-pill">{{ row.edge }}</span></span>
           </div>
         {% endfor %}
       </div>

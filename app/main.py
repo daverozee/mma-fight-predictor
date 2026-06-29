@@ -27,6 +27,7 @@ from app.ml.predictor import FightPredictor
 from app.models import User
 from app.odds_sites import load_odds_sites
 from app.rankings import load_rankings
+from app.sentiment import sample_matchup_sentiment
 
 settings = get_settings()
 
@@ -272,6 +273,7 @@ def predict(
     b_takedown_defense: float = Form(...),
     b_strikes_landed_per_min: float = Form(...),
     b_strikes_absorbed_per_min: float = Form(...),
+    include_sentiment: bool = Form(default=False),
 ) -> HTMLResponse:
     try:
         fighter_a = FighterFeatures(
@@ -311,7 +313,11 @@ def predict(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    result = predictor.predict(fighter_a, fighter_b)
+    result = predictor.predict(
+        fighter_a,
+        fighter_b,
+        sentiment=sentiment_for_matchup(include_sentiment, fighter_a.name, fighter_b.name),
+    )
     return templates.TemplateResponse(
         request,
         "result.html",
@@ -333,6 +339,7 @@ def predict_from_profiles(
     db: Session = Depends(get_db),
     a_profile_id: int = Form(...),
     b_profile_id: int = Form(...),
+    include_sentiment: bool = Form(default=False),
 ) -> HTMLResponse:
     if a_profile_id == b_profile_id:
         return render_predict_page(
@@ -356,7 +363,11 @@ def predict_from_profiles(
 
     fighter_a = profile_to_features(profile_a)
     fighter_b = profile_to_features(profile_b)
-    result = predictor.predict(fighter_a, fighter_b)
+    result = predictor.predict(
+        fighter_a,
+        fighter_b,
+        sentiment=sentiment_for_matchup(include_sentiment, fighter_a.name, fighter_b.name),
+    )
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return templates.TemplateResponse(
         request,
@@ -488,7 +499,15 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
 
     fighter_a = profile_to_features(profile_a)
     fighter_b = profile_to_features(profile_b)
-    result = predictor.predict(fighter_a, fighter_b)
+    result = predictor.predict(
+        fighter_a,
+        fighter_b,
+        sentiment=sentiment_for_matchup(
+            bool(payload.get("include_sentiment")),
+            fighter_a.name,
+            fighter_b.name,
+        ),
+    )
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return {
         "fighter_a": serialize_fighter(profile_a, media_urls[profile_a.name]),
@@ -496,6 +515,22 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
         "prediction": result,
         "note": "Some fighters use estimated values where complete public statistics are unavailable.",
     }
+
+
+def sentiment_for_matchup(
+    include_sentiment: bool,
+    fighter_a_name: str,
+    fighter_b_name: str,
+) -> dict[str, object] | None:
+    if not include_sentiment:
+        return None
+    return sample_matchup_sentiment(
+        fighter_a_name,
+        fighter_b_name,
+        api_key=settings.google_search_api_key,
+        engine_id=settings.google_search_engine_id,
+        results_per_fighter=settings.sentiment_search_results,
+    )
 
 
 def render_predict_page(

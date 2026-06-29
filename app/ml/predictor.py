@@ -27,11 +27,17 @@ class FightPredictor:
             self._model = joblib.load(self.model_path)
         return self._model
 
-    def predict(self, fighter_a: FighterFeatures, fighter_b: FighterFeatures) -> dict[str, object]:
+    def predict(
+        self,
+        fighter_a: FighterFeatures,
+        fighter_b: FighterFeatures,
+        sentiment: dict[str, object] | None = None,
+    ) -> dict[str, object]:
         features = build_matchup_features(fighter_a, fighter_b)
         insights = matchup_insights(features, fighter_a, fighter_b)
         comparison_strength = comparison_strength_label(features)
-        if not insights:
+        sentiment_available = bool(sentiment and sentiment.get("available"))
+        if not insights and not sentiment_available:
             return {
                 "winner": "No clear edge",
                 "probability_a": 0.5,
@@ -39,6 +45,7 @@ class FightPredictor:
                 "confidence": 0.5,
                 "features": features,
                 "insights": [],
+                "sentiment": sentiment,
                 "comparison_strength": comparison_strength,
                 "profile_rows": profile_comparison_rows(fighter_a, fighter_b),
                 "summary": (
@@ -47,17 +54,23 @@ class FightPredictor:
                 ),
             }
 
-        frame = pd.DataFrame([{column: features[column] for column in FEATURE_COLUMNS}])
-        probability_a = float(self.model().predict_proba(frame)[0][1])
+        if insights:
+            frame = pd.DataFrame([{column: features[column] for column in FEATURE_COLUMNS}])
+            probability_a = float(self.model().predict_proba(frame)[0][1])
+        else:
+            probability_a = 0.5
+        probability_a = apply_sentiment_adjustment(probability_a, sentiment)
         winner = fighter_a.name if probability_a >= 0.5 else fighter_b.name
         confidence = probability_a if probability_a >= 0.5 else 1 - probability_a
+        display_insights = insights + sentiment_insights(sentiment, fighter_a.name, fighter_b.name)
         return {
             "winner": winner,
             "probability_a": round(probability_a, 3),
             "probability_b": round(1 - probability_a, 3),
             "confidence": round(confidence, 3),
             "features": features,
-            "insights": insights,
+            "insights": display_insights,
+            "sentiment": sentiment,
             "comparison_strength": comparison_strength,
             "profile_rows": profile_comparison_rows(fighter_a, fighter_b),
             "summary": (
@@ -74,6 +87,45 @@ def comparison_strength_label(features: dict[str, float]) -> str:
     if meaningful_count < 4:
         return "Developing"
     return "Standard"
+
+
+def apply_sentiment_adjustment(
+    probability_a: float,
+    sentiment: dict[str, object] | None,
+) -> float:
+    if not sentiment or not sentiment.get("available"):
+        return probability_a
+    fighter_a = sentiment.get("fighter_a") or {}
+    fighter_b = sentiment.get("fighter_b") or {}
+    score_a = float(fighter_a.get("score", 0))
+    score_b = float(fighter_b.get("score", 0))
+    adjustment = max(-0.06, min(0.06, (score_a - score_b) * 0.04))
+    sentiment["adjustment"] = round(adjustment, 3)
+    return max(0.01, min(0.99, probability_a + adjustment))
+
+
+def sentiment_insights(
+    sentiment: dict[str, object] | None,
+    fighter_a_name: str,
+    fighter_b_name: str,
+) -> list[dict[str, str]]:
+    if not sentiment or not sentiment.get("available"):
+        return []
+    fighter_a = sentiment.get("fighter_a") or {}
+    fighter_b = sentiment.get("fighter_b") or {}
+    score_a = float(fighter_a.get("score", 0))
+    score_b = float(fighter_b.get("score", 0))
+    if abs(score_a - score_b) < 0.08:
+        return []
+    advantage = fighter_a_name if score_a > score_b else fighter_b_name
+    sample_size = int(sentiment.get("sample_size", 0))
+    return [
+        {
+            "label": "Online pulse",
+            "advantage": advantage,
+            "detail": f"More positive recent search sample across {sample_size} results",
+        }
+    ]
 
 
 def matchup_insights(

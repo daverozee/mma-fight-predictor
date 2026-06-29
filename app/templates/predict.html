@@ -26,6 +26,10 @@
         </section>
       {% endfor %}
     </div>
+    <label class="sentiment-toggle">
+      <input type="checkbox" name="include_sentiment" value="true" checked>
+      <span><strong>Include online sentiment</strong><small>Samples recent public search coverage as a light matchup signal.</small></span>
+    </label>
     <p class="matchup-status" data-matchup-status aria-live="polite">Choose two fighters from the roster search to analyze.</p>
     <button class="button" type="submit" data-matchup-submit disabled>Choose two fighters</button>
   </fieldset>
@@ -54,6 +58,10 @@
     </div>
   </fieldset>
   {% endfor %}
+  <label class="sentiment-toggle">
+    <input type="checkbox" name="include_sentiment" value="true" checked>
+    <span><strong>Include online sentiment</strong><small>Samples recent public search coverage as a light matchup signal.</small></span>
+  </label>
   <button class="button" type="submit">Predict winner</button>
 </form>
 <script>

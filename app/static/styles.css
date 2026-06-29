@@ -1076,6 +1076,76 @@ legend {
   gap: 12px;
 }
 
+.sentiment-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 680px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.sentiment-toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.sentiment-toggle span {
+  display: grid;
+  gap: 4px;
+}
+
+.sentiment-toggle small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.sentiment-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.sentiment-panel h2,
+.sentiment-panel p {
+  margin: 0;
+}
+
+.sentiment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.sentiment-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sentiment-card span,
+.sentiment-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.sentiment-card strong {
+  font-size: 1.1rem;
+}
+
+.sentiment-card p {
+  color: var(--ink);
+}
+
 .search-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1749,6 +1819,7 @@ legend {
   .fight-card-stage,
   .fighter-preview-grid,
   .fighter-search-grid,
+  .sentiment-grid,
   .fighter-detail-head,
   .fighter-detail-grid,
   .fighter-row,

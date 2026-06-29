@@ -53,6 +53,28 @@
           <p>Both saved profiles currently show the same comparison values. Add richer fighter statistics to produce a more decisive read.</p>
         </div>
       {% endif %}
+      {% if result.sentiment and result.sentiment.requested %}
+        <div class="sentiment-panel">
+          <h2>Online pulse</h2>
+          {% if result.sentiment.available %}
+            <p>{{ result.sentiment.summary }}</p>
+            <div class="sentiment-grid">
+              {% for sample in [result.sentiment.fighter_a, result.sentiment.fighter_b] %}
+                <article class="sentiment-card">
+                  <span>{{ sample.label }}</span>
+                  <strong>{{ sample.name }}</strong>
+                  <p>{{ sample.sample_size }} sampled results</p>
+                  {% if sample.sources %}
+                    <small>{{ sample.sources | join(", ") }}</small>
+                  {% endif %}
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>Online pulse was not available for this matchup.</p>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
     <div>
       <h2>Profile comparison</h2>

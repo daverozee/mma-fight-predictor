@@ -26,7 +26,8 @@
         </section>
       {% endfor %}
     </div>
-    <button class="button" type="submit" data-matchup-submit disabled>Analyze matchup</button>
+    <p class="matchup-status" data-matchup-status aria-live="polite">Choose two fighters from the roster search to analyze.</p>
+    <button class="button" type="submit" data-matchup-submit disabled>Choose two fighters</button>
   </fieldset>
 </form>
 {% endif %}
@@ -58,10 +59,21 @@
 <script>
   const searchState = { a: null, b: null };
   const submitButton = document.querySelector("[data-matchup-submit]");
+  const matchupStatus = document.querySelector("[data-matchup-status]");
 
   function updateSubmitState() {
     if (!submitButton) return;
-    submitButton.disabled = !(searchState.a && searchState.b && searchState.a !== searchState.b);
+    const ready = searchState.a && searchState.b && searchState.a !== searchState.b;
+    submitButton.disabled = !ready;
+    submitButton.textContent = ready ? "Analyze matchup" : "Choose two fighters";
+    if (!matchupStatus) return;
+    if (searchState.a && searchState.b && searchState.a === searchState.b) {
+      matchupStatus.textContent = "Choose two different fighters.";
+    } else if (ready) {
+      matchupStatus.textContent = "Ready to analyze this matchup.";
+    } else {
+      matchupStatus.textContent = "Choose two fighters from the roster search to analyze.";
+    }
   }
 
   function renderMessage(panel, message) {
@@ -117,6 +129,14 @@
 
     if (!payload.fighters.length) {
       renderMessage(panel, "No fighters found.");
+      return;
+    }
+
+    const exactMatch = payload.fighters.find(
+      (fighter) => fighter.name.toLowerCase() === term.toLowerCase()
+    );
+    if (exactMatch) {
+      selectFighter(panel, exactMatch);
       return;
     }
 

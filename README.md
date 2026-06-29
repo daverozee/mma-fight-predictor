@@ -51,6 +51,20 @@ pytest
 ruff check .
 ```
 
+Train the predictor from the imported bout-history database and let the trainer select the
+best-performing algorithm:
+
+```powershell
+python scripts/train_model_from_db.py
+```
+
+With Docker:
+
+```powershell
+docker compose exec -T web python scripts/train_model_from_db.py
+docker compose restart web
+```
+
 ## GitHub Project Setup
 
 This repo includes a starter GitHub presence:

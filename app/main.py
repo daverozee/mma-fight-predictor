@@ -22,6 +22,7 @@ from app.fighters import (
 from app.fight_tree import build_defeat_tree, fight_result_count
 from app.ingestion.connectors import import_catalog, ingestion_counts
 from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
+from app.matchup_context import career_arc_context
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
@@ -251,6 +252,7 @@ def predict(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     a_name: str = Form(...),
+    a_weight_class: str = Form(default="Unknown"),
     a_age: float = Form(...),
     a_height_cm: float = Form(...),
     a_reach_cm: float = Form(...),
@@ -263,6 +265,7 @@ def predict(
     a_strikes_landed_per_min: float = Form(...),
     a_strikes_absorbed_per_min: float = Form(...),
     b_name: str = Form(...),
+    b_weight_class: str = Form(default="Unknown"),
     b_age: float = Form(...),
     b_height_cm: float = Form(...),
     b_reach_cm: float = Form(...),
@@ -279,6 +282,7 @@ def predict(
     try:
         fighter_a = FighterFeatures(
             name=a_name,
+            weight_class=a_weight_class,
             age=a_age,
             height_cm=a_height_cm,
             reach_cm=a_reach_cm,
@@ -293,6 +297,7 @@ def predict(
         )
         fighter_b = FighterFeatures(
             name=b_name,
+            weight_class=b_weight_class,
             age=b_age,
             height_cm=b_height_cm,
             reach_cm=b_reach_cm,
@@ -368,6 +373,7 @@ def predict_from_profiles(
         fighter_a,
         fighter_b,
         sentiment=sentiment_for_matchup(include_sentiment, fighter_a.name, fighter_b.name),
+        career_arc=career_arc_context(db, profile_a, profile_b),
     )
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return templates.TemplateResponse(
@@ -508,6 +514,7 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
             fighter_a.name,
             fighter_b.name,
         ),
+        career_arc=career_arc_context(db, profile_a, profile_b),
     )
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return {

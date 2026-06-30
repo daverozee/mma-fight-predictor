@@ -48,6 +48,7 @@ def test_auth_and_prediction_flow() -> None:
 
         payload = {
             "a_name": "Alex Mercer",
+            "a_weight_class": "Lightweight",
             "a_age": 29,
             "a_height_cm": 178,
             "a_reach_cm": 185,
@@ -60,6 +61,7 @@ def test_auth_and_prediction_flow() -> None:
             "a_strikes_landed_per_min": 4.8,
             "a_strikes_absorbed_per_min": 3.1,
             "b_name": "Jordan Vale",
+            "b_weight_class": "Featherweight",
             "b_age": 32,
             "b_height_cm": 175,
             "b_reach_cm": 180,
@@ -77,6 +79,7 @@ def test_auth_and_prediction_flow() -> None:
         assert "Matchup outlook" in response.text
         assert "Key read" in response.text
         assert "Profile comparison" in response.text
+        assert "Weight class" in response.text
 
 
 def test_identical_profiles_do_not_produce_arbitrary_favorite() -> None:

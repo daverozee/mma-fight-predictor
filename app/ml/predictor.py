@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from app.config import get_settings
 from app.ml.features import FEATURE_COLUMNS, FighterFeatures, build_matchup_features
 from app.ml.training import train_model
+from app.weight_classes import canonical_weight_class, weight_class_limit_lbs
 
 
 EPSILON = 1e-9
@@ -32,12 +33,19 @@ class FightPredictor:
         fighter_a: FighterFeatures,
         fighter_b: FighterFeatures,
         sentiment: dict[str, object] | None = None,
+        career_arc: dict[str, object] | None = None,
     ) -> dict[str, object]:
         features = build_matchup_features(fighter_a, fighter_b)
         insights = matchup_insights(features, fighter_a, fighter_b)
         comparison_strength = comparison_strength_label(features)
         sentiment_available = bool(sentiment and sentiment.get("available"))
-        if not insights and not sentiment_available:
+        weight_adjustment = weight_class_adjustment(fighter_a, fighter_b)
+        career_adjustment = career_arc_adjustment(career_arc)
+        context_insights = weight_class_insights(fighter_a, fighter_b) + career_arc_insights(
+            career_arc
+        )
+        context_available = bool(context_insights)
+        if not insights and not sentiment_available and not context_available:
             return {
                 "winner": "No clear edge",
                 "probability_a": 0.5,
@@ -46,6 +54,7 @@ class FightPredictor:
                 "features": features,
                 "insights": [],
                 "sentiment": sentiment,
+                "career_arc": career_arc,
                 "comparison_strength": comparison_strength,
                 "profile_rows": profile_comparison_rows(fighter_a, fighter_b),
                 "summary": (
@@ -59,10 +68,16 @@ class FightPredictor:
             probability_a = float(self.model().predict_proba(frame)[0][1])
         else:
             probability_a = 0.5
+        probability_a = apply_probability_adjustment(
+            probability_a,
+            weight_adjustment + career_adjustment,
+        )
         probability_a = apply_sentiment_adjustment(probability_a, sentiment)
         winner = fighter_a.name if probability_a >= 0.5 else fighter_b.name
         confidence = probability_a if probability_a >= 0.5 else 1 - probability_a
-        display_insights = insights + sentiment_insights(sentiment, fighter_a.name, fighter_b.name)
+        display_insights = (
+            context_insights + insights + sentiment_insights(sentiment, fighter_a.name, fighter_b.name)
+        )
         return {
             "winner": winner,
             "probability_a": round(probability_a, 3),
@@ -71,6 +86,7 @@ class FightPredictor:
             "features": features,
             "insights": display_insights,
             "sentiment": sentiment,
+            "career_arc": career_arc,
             "comparison_strength": comparison_strength,
             "profile_rows": profile_comparison_rows(fighter_a, fighter_b),
             "summary": (
@@ -87,6 +103,75 @@ def comparison_strength_label(features: dict[str, float]) -> str:
     if meaningful_count < 4:
         return "Developing"
     return "Standard"
+
+
+def apply_probability_adjustment(probability_a: float, adjustment: float) -> float:
+    return max(0.01, min(0.99, probability_a + adjustment))
+
+
+def weight_class_adjustment(fighter_a: FighterFeatures, fighter_b: FighterFeatures) -> float:
+    limit_a = weight_class_limit_lbs(fighter_a.weight_class)
+    limit_b = weight_class_limit_lbs(fighter_b.weight_class)
+    if limit_a is None or limit_b is None or limit_a == limit_b:
+        return 0.0
+    difference = limit_a - limit_b
+    adjustment = max(-0.55, min(0.55, (difference / 100) * 0.5))
+    return round(adjustment, 3)
+
+
+def career_arc_adjustment(career_arc: dict[str, object] | None) -> float:
+    if not career_arc or not career_arc.get("available"):
+        return 0.0
+    return float(career_arc.get("adjustment_a", 0.0))
+
+
+def weight_class_insights(
+    fighter_a: FighterFeatures,
+    fighter_b: FighterFeatures,
+) -> list[dict[str, str]]:
+    adjustment = weight_class_adjustment(fighter_a, fighter_b)
+    if abs(adjustment) <= EPSILON:
+        return []
+    limit_a = weight_class_limit_lbs(fighter_a.weight_class)
+    limit_b = weight_class_limit_lbs(fighter_b.weight_class)
+    class_a = canonical_weight_class(fighter_a.weight_class) or fighter_a.weight_class
+    class_b = canonical_weight_class(fighter_b.weight_class) or fighter_b.weight_class
+    advantage = fighter_a.name if adjustment > 0 else fighter_b.name
+    heavier = class_a if adjustment > 0 else class_b
+    lighter = class_b if adjustment > 0 else class_a
+    gap = abs((limit_a or 0) - (limit_b or 0))
+    return [
+        {
+            "label": "Weight class",
+            "advantage": advantage,
+            "detail": f"{heavier} is {gap:.0f} lb above {lighter}",
+        }
+    ]
+
+
+def career_arc_insights(career_arc: dict[str, object] | None) -> list[dict[str, str]]:
+    if (
+        not career_arc
+        or not career_arc.get("available")
+        or career_arc.get("advantage") == "Even"
+    ):
+        return []
+    advantage = str(career_arc["advantage"])
+    fighter = (
+        career_arc["fighter_a"]
+        if career_arc["fighter_a"]["name"] == advantage
+        else career_arc["fighter_b"]
+    )
+    return [
+        {
+            "label": "Career arc",
+            "advantage": advantage,
+            "detail": (
+                f"{fighter['recent_record']} in the last three years, "
+                f"last fought {fighter['last_fight_years_ago']} years ago"
+            ),
+        }
+    ]
 
 
 def apply_sentiment_adjustment(
@@ -279,6 +364,12 @@ def profile_comparison_rows(
     a_total = max(fighter_a.wins + fighter_a.losses, 1)
     b_total = max(fighter_b.wins + fighter_b.losses, 1)
     rows = [
+        {
+            "label": "Weight class",
+            "a": fighter_a.weight_class,
+            "b": fighter_b.weight_class,
+            "edge": weight_class_edge(fighter_a, fighter_b),
+        },
         comparison_row("Age", fighter_a.age, fighter_b.age, fighter_a.name, fighter_b.name, False),
         comparison_row(
             "Height",
@@ -357,6 +448,13 @@ def profile_comparison_rows(
         ),
     ]
     return rows
+
+
+def weight_class_edge(fighter_a: FighterFeatures, fighter_b: FighterFeatures) -> str:
+    adjustment = weight_class_adjustment(fighter_a, fighter_b)
+    if abs(adjustment) <= EPSILON:
+        return "Even"
+    return fighter_a.name if adjustment > 0 else fighter_b.name
 
 
 def percentage_row(

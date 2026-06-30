@@ -220,6 +220,7 @@ def get_fighter(db: Session, fighter_id: int) -> FighterProfile | None:
 def profile_to_features(profile: FighterProfile) -> FighterFeatures:
     return FighterFeatures(
         name=profile.name,
+        weight_class=profile.weight_class,
         age=profile.age,
         height_cm=profile.height_cm,
         reach_cm=profile.reach_cm,

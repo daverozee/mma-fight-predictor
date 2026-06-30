@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     sentiment_search_results: int = 5
     fighter_article_results: int = 3
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
 @lru_cache

@@ -105,6 +105,16 @@ python scripts/import_fight_results.py `
   --source-url "https://github.com/ThasankaK/UFC-Dataset-and-Model-Predictor"
 ```
 
+Import completed live fight-result edges from BALLDONTLIE for the defeat tree and
+career-arc features:
+
+```powershell
+$env:BALLDONTLIE_API_KEY = "your-balldontlie-key"
+python scripts/import_balldontlie_fights.py
+```
+
+This requires BALLDONTLIE account access to the MMA `/fights` endpoint.
+
 Import richer UFCStats-derived career features and fight aggregates:
 
 ```powershell
@@ -131,6 +141,7 @@ With Docker:
 
 ```powershell
 docker compose up -d --build
+docker compose exec -T web python scripts/import_balldontlie_fights.py
 docker compose exec -T web python scripts/import_ufcstats_features.py
 docker compose exec -T web python scripts/import_social_links.py
 docker compose exec -T web python scripts/import_wikidata_instagram.py

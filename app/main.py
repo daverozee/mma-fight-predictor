@@ -56,6 +56,8 @@ BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 predictor = FightPredictor()
+PROFILE_TREE_DEPTH = 2
+PROFILE_TREE_MAX_CHILDREN = 10
 
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
@@ -198,7 +200,17 @@ def fighter_detail_page(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
     media_urls = fighter_thumbnail_urls(db, [fighter])
     feature_map = features_for_fighter(db, fighter.name)
-    tree = build_defeat_tree(db, fighter) if fight_result_count(db) else None
+    fight_edges = fight_result_count(db)
+    tree = (
+        build_defeat_tree(
+            db,
+            fighter,
+            depth=PROFILE_TREE_DEPTH,
+            max_children=PROFILE_TREE_MAX_CHILDREN,
+        )
+        if fight_edges
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "fighter_detail.html",
@@ -208,7 +220,7 @@ def fighter_detail_page(
             "profile_context": fighter_profile_context(fighter, feature_map),
             "thumbnail_url": media_urls[fighter.name],
             "article_links": fighter_article_links(fighter.name),
-            "fight_result_count": fight_result_count(db),
+            "fight_result_count": fight_edges,
             "tree": tree,
         },
     )

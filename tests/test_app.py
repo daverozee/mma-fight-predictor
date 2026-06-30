@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+import app.main as main_module
 from app.main import app
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
@@ -192,6 +193,40 @@ def test_redundant_dashboard_and_tree_pages_are_removed() -> None:
 
         response = client.get("/dashboard")
         assert response.status_code == 404
+
+
+def test_fighter_profile_uses_bounded_inline_tree(monkeypatch) -> None:
+    email = f"profile-tree-{uuid4()}@example.com"
+    password = "good-password"
+    captured = {}
+
+    def fake_tree(db, fighter, depth=4, max_children=80):
+        captured["depth"] = depth
+        captured["max_children"] = max_children
+        return {
+            "id": fighter.id,
+            "name": fighter.name,
+            "thumbnail_url": "/api/v1/fighter-thumbnail.svg?name=Test",
+            "defeated": [],
+        }
+
+    monkeypatch.setattr(main_module, "build_defeat_tree", fake_tree)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/register",
+            data={"email": email, "password": password},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        response = client.get("/api/v1/fighters?search=Jon%20Jones&limit=1")
+        fighter_id = response.json()["fighters"][0]["id"]
+
+        response = client.get(f"/fighters/{fighter_id}")
+        assert response.status_code == 200
+
+    assert captured == {"depth": 2, "max_children": 10}
 
 
 def test_public_api_lists_fighters_and_predicts() -> None:

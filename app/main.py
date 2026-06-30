@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.database import get_db, init_db
 from app.fighters import (
     fighter_data_counts,
+    fighter_profile_context,
     features_for_fighter,
     get_fighter,
     profile_to_features,
@@ -198,6 +199,7 @@ def fighter_detail_page(
     if fighter is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
     media_urls = fighter_thumbnail_urls(db, [fighter])
+    feature_map = features_for_fighter(db, fighter.name)
     tree = build_defeat_tree(db, fighter) if fight_result_count(db) else None
     return templates.TemplateResponse(
         request,
@@ -205,6 +207,7 @@ def fighter_detail_page(
         {
             "user": user,
             "fighter": fighter,
+            "profile_context": fighter_profile_context(fighter, feature_map),
             "thumbnail_url": media_urls[fighter.name],
             "article_links": fighter_article_links(fighter.name),
             "fight_result_count": fight_result_count(db),

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.ml.features import FighterFeatures
 from app.models import FighterExternalFeature, FighterProfile
 from app.social import normalize_instagram_url
+from app.weight_classes import weight_class_limit_lbs
 
 PROFILE_COLUMNS = [
     "name",
@@ -142,9 +143,31 @@ def refresh_profile_context_from_features(db: Session) -> int:
             )
         ).all()
     )
+    if not profiles:
+        return 0
+
+    profile_names = [profile.name for profile in profiles]
+    weight_feature_names = {
+        "balldontlie_fighters_live_weight_class_name",
+        "balldontlie_fighters_live_weight_class_abbreviation",
+        "weight_class.name",
+        "weight_class",
+    }
+    rows = db.scalars(
+        select(FighterExternalFeature).where(
+            FighterExternalFeature.fighter_name.in_(profile_names),
+            FighterExternalFeature.feature_name.in_(weight_feature_names),
+        )
+    ).all()
+    feature_maps: dict[str, dict[str, str | float]] = {}
+    for row in rows:
+        feature_maps.setdefault(row.fighter_name, {})[row.feature_name] = (
+            row.numeric_value if row.numeric_value is not None else row.text_value
+        )
+
     updated = 0
     for profile in profiles:
-        weight_class = resolved_weight_class(profile.weight_class, features_for_fighter(db, profile.name))
+        weight_class = resolved_weight_class(profile.weight_class, feature_maps.get(profile.name))
         if weight_class != profile.weight_class:
             profile.weight_class = weight_class
             updated += 1
@@ -253,6 +276,53 @@ def resolved_weight_lbs(features: dict[str, str | float] | None) -> float | None
         if value is not None:
             return value
     return None
+
+
+def resolved_fight_club(features: dict[str, str | float] | None) -> str | None:
+    features = features or {}
+    for key in (
+        "supplemental_fighter_features_camp",
+        "camp",
+        "gym",
+        "team",
+        "fight_club",
+        "fight_team",
+    ):
+        value = features.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    for key, value in features.items():
+        normalized_key = key.lower()
+        if any(term in normalized_key for term in ("camp", "gym", "fight_club", "fight_team")):
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return None
+
+
+def fighter_profile_context(
+    profile: FighterProfile,
+    feature_map: dict[str, str | float] | None = None,
+) -> dict[str, object]:
+    weight_lbs = resolved_weight_lbs(feature_map)
+    weight_class = resolved_weight_class(profile.weight_class, feature_map)
+    weight_source = "listed" if weight_lbs is not None else "class_limit"
+    if weight_lbs is None:
+        weight_lbs = weight_class_limit_lbs(weight_class)
+    return {
+        "weight_class": weight_class,
+        "weight_lbs": weight_lbs,
+        "weight_display": format_weight(weight_lbs, weight_source),
+        "fight_club": resolved_fight_club(feature_map),
+    }
+
+
+def format_weight(weight_lbs: float | int | None, source: str) -> str | None:
+    if weight_lbs is None:
+        return None
+    amount = f"{weight_lbs:.0f}" if float(weight_lbs).is_integer() else f"{weight_lbs:.1f}"
+    if source == "class_limit":
+        return f"{amount} lb class"
+    return f"{amount} lb"
 
 
 def first_instagram_url(features: dict[str, str | float]) -> str | None:

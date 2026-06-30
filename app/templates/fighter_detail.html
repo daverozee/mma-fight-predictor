@@ -24,9 +24,11 @@
       <h2>Core profile</h2>
       <div class="profile-stat-grid">
         {{ stat("Age", fighter.age | round(1)) }}
+        {% if profile_context.weight_display %}{{ stat("Weight", profile_context.weight_display) }}{% endif %}
         {{ stat("Height", (fighter.height_cm | round(1)) ~ " cm") }}
         {{ stat("Reach", (fighter.reach_cm | round(1)) ~ " cm") }}
         {{ stat("Record", (fighter.wins | int) ~ "-" ~ (fighter.losses | int)) }}
+        {% if profile_context.fight_club %}{{ stat("Fight club", profile_context.fight_club) }}{% endif %}
       </div>
     </article>
     <article>

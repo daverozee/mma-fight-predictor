@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
 from app.fighters import (
+    fighter_profile_context,
     features_for_fighter,
     profile_to_features,
     promote_imported_fighters_to_profiles,
@@ -200,6 +201,38 @@ def test_existing_unknown_profile_uses_external_weight_context() -> None:
     assert profile.weight_class == "Heavyweight"
     assert features.weight_class == "Heavyweight"
     assert features.weight_lbs == 231
+    assert fighter_profile_context(profile, features_for_fighter(db, profile.name))[
+        "weight_display"
+    ] == "231 lb"
+
+
+def test_profile_context_includes_fight_club_when_known() -> None:
+    profile = FighterProfile(
+        name="Maya Torres",
+        weight_class="Flyweight",
+        age=27,
+        height_cm=165,
+        reach_cm=168,
+        wins=11,
+        losses=2,
+        ko_rate=0.24,
+        submission_rate=0.35,
+        takedown_accuracy=0.52,
+        takedown_defense=0.7,
+        strikes_landed_per_min=4.3,
+        strikes_absorbed_per_min=2.7,
+        source="test",
+    )
+
+    context = fighter_profile_context(
+        profile,
+        {
+            "supplemental_fighter_features_camp": "Altitude Fight Team",
+        },
+    )
+
+    assert context["weight_display"] == "125 lb class"
+    assert context["fight_club"] == "Altitude Fight Team"
 
 
 def test_live_sources_can_be_env_gated(monkeypatch) -> None:

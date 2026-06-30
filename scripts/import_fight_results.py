@@ -4,6 +4,7 @@ import csv
 import io
 import sys
 import urllib.request
+from dataclasses import dataclass
 
 from sqlalchemy import select
 
@@ -12,6 +13,12 @@ sys.path.append(str(ROOT))
 
 from app.database import SessionLocal, init_db  # noqa: E402
 from app.models import FightResult, FighterProfile  # noqa: E402
+
+
+@dataclass(frozen=True)
+class FightResultImportSummary:
+    imported: int
+    skipped: int
 
 
 def main() -> None:
@@ -43,48 +50,47 @@ def main() -> None:
     args = parser.parse_args()
 
     init_db()
+    with SessionLocal() as db:
+        summary = import_fight_results_from_args(db, args)
+    print(f"Fight result edges imported: {summary.imported}")
+    print(f"Rows skipped: {summary.skipped}")
+
+
+def import_fight_results_from_args(
+    db,
+    args: argparse.Namespace,
+) -> FightResultImportSummary:
+    events = load_ufcstats_events(args.events_csv) if args.format == "ufcstats-event-fight-stats" else {}
+    profiles = {row.name: row.id for row in db.scalars(select(FighterProfile)).all()}
     imported = 0
     skipped = 0
-    events = (
-        load_ufcstats_events(args.events_csv)
-        if args.format == "ufcstats-event-fight-stats"
-        else {}
-    )
-    with SessionLocal() as db:
-        profiles = {
-            row.name: row.id
-            for row in db.scalars(select(FighterProfile)).all()
-        }
-        for row in csv.DictReader(open_text(args.csv_path)):
-            edge = normalize_edge(row, args, events)
-            if edge is None:
-                skipped += 1
-                continue
-            existing = db.scalar(
-                existing_result_query(edge, args.allow_source_duplicates, args.source)
+    for row in csv.DictReader(open_text(args.csv_path)):
+        edge = normalize_edge(row, args, events)
+        if edge is None:
+            skipped += 1
+            continue
+        existing = db.scalar(existing_result_query(edge, args.allow_source_duplicates, args.source))
+        if existing:
+            skipped += 1
+            continue
+        db.add(
+            FightResult(
+                winner_profile_id=profiles.get(edge["winner_name"]),
+                loser_profile_id=profiles.get(edge["loser_name"]),
+                winner_name=edge["winner_name"],
+                loser_name=edge["loser_name"],
+                event_name=edge["event_name"],
+                bout_date=edge["bout_date"],
+                method=edge["method"],
+                source=args.source,
+                source_url=edge["source_url"] or args.source_url,
             )
-            if existing:
-                skipped += 1
-                continue
-            db.add(
-                FightResult(
-                    winner_profile_id=profiles.get(edge["winner_name"]),
-                    loser_profile_id=profiles.get(edge["loser_name"]),
-                    winner_name=edge["winner_name"],
-                    loser_name=edge["loser_name"],
-                    event_name=edge["event_name"],
-                    bout_date=edge["bout_date"],
-                    method=edge["method"],
-                    source=args.source,
-                    source_url=edge["source_url"] or args.source_url,
-                )
-            )
-            imported += 1
-            if imported % 500 == 0:
-                db.commit()
-        db.commit()
-    print(f"Fight result edges imported: {imported}")
-    print(f"Rows skipped: {skipped}")
+        )
+        imported += 1
+        if imported % 500 == 0:
+            db.commit()
+    db.commit()
+    return FightResultImportSummary(imported=imported, skipped=skipped)
 
 
 def existing_result_query(

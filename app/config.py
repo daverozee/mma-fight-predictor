@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     fighter_article_results: int = 3
     data_import_interval_seconds: int = 21_600
     data_import_run_on_startup: bool = True
+    historical_fight_results_url: str | None = None
+    historical_fight_results_format: str = "winner-loser"
+    historical_fight_results_events_url: str | None = None
+    historical_fight_results_source: str = "configured-fight-history"
     media_seed_limit: int = 500
     media_wikimedia_lookup_limit: int = 25
     media_verification_limit: int = 50

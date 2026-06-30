@@ -84,13 +84,14 @@ def run_once(catalog_path: str | None = None) -> DataImportSummary | None:
     elapsed = time.monotonic() - started
     logger.info(
         "data import cycle completed seconds=%.2f records=%s features=%s promoted=%s "
-        "current_fights=%s media_overrides=%s media_generated=%s media_found=%s "
+        "current_fights=%s historical_fights=%s media_overrides=%s media_generated=%s media_found=%s "
         "media_verified=%s media_broken=%s fighters=%s external_features=%s",
         elapsed,
         summary.records_seen,
         summary.features_imported,
         summary.profiles_promoted,
         summary.current_fights_imported,
+        summary.historical_fights_imported,
         summary.media_overrides_imported,
         summary.media_improvement["generated"],
         summary.media_improvement["wikimedia_found"],

@@ -115,8 +115,10 @@ With Docker, the worker runs this cycle on startup and then every
 `DATA_IMPORT_INTERVAL_SECONDS` seconds. The default interval is six hours.
 Each worker cycle also improves fighter images in small batches by seeding missing media
 rows, checking Wikimedia for public thumbnails, and verifying existing image URLs.
+If `HISTORICAL_FIGHT_RESULTS_URL` is set, the worker also runs a historical bout-history
+import each cycle and skips previously imported bouts.
 
-Import UFC bout-history edges for the defeat tree:
+Import UFC bout-history edges for profile fight logs, career curves, and the defeat tree:
 
 ```powershell
 python scripts/import_fight_results.py `
@@ -125,6 +127,15 @@ python scripts/import_fight_results.py `
   --events-csv "https://raw.githubusercontent.com/ThasankaK/UFC-Dataset-and-Model-Predictor/master/ufc_events.csv" `
   --source ufcstats-public-dataset `
   --source-url "https://github.com/ThasankaK/UFC-Dataset-and-Model-Predictor"
+```
+
+To have the worker keep that archive refreshed automatically, set:
+
+```powershell
+$env:HISTORICAL_FIGHT_RESULTS_URL = "https://raw.githubusercontent.com/ThasankaK/UFC-Dataset-and-Model-Predictor/master/ufc_event_fight_stats.csv"
+$env:HISTORICAL_FIGHT_RESULTS_FORMAT = "ufcstats-event-fight-stats"
+$env:HISTORICAL_FIGHT_RESULTS_EVENTS_URL = "https://raw.githubusercontent.com/ThasankaK/UFC-Dataset-and-Model-Predictor/master/ufc_events.csv"
+$env:HISTORICAL_FIGHT_RESULTS_SOURCE = "ufcstats-public-dataset"
 ```
 
 Import completed live fight-result edges from BALLDONTLIE for the defeat tree and

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import authenticate_user, create_user
+from app.bout_history import fighter_bout_history
 from app.career_curve import fighter_career_curve
 from app.config import get_settings
 from app.database import get_db, init_db
@@ -212,6 +213,7 @@ def fighter_detail_page(
             "thumbnail_url": media_urls[fighter.name],
             "article_links": fighter_article_links(fighter.name),
             "career_curve": fighter_career_curve(db, fighter),
+            "bout_history": fighter_bout_history(db, fighter),
             "fight_result_count": fight_edges,
             "tree": tree,
         },

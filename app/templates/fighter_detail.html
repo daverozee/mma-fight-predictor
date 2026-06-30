@@ -120,6 +120,51 @@
   </div>
 </section>
 <section class="band">
+  <div class="fighter-history-section">
+    <div>
+      <p class="eyebrow">Fight record</p>
+      <h2>Previous fights</h2>
+    </div>
+    {% if bout_history %}
+      <div class="bout-history-table">
+        <div class="bout-history-row header">
+          <span>Date</span>
+          <span>Result</span>
+          <span>Opponent</span>
+          <span>Event</span>
+          <span>Method</span>
+        </div>
+        {% for bout in bout_history %}
+          <div class="bout-history-row">
+            <span>{{ bout.date }}</span>
+            <span><strong class="result-pill {% if bout.result == 'Win' %}win{% else %}loss{% endif %}">{{ bout.result }}</strong></span>
+            <span>
+              {% if bout.opponent_id %}
+                <a href="/fighters/{{ bout.opponent_id }}">{{ bout.opponent }}</a>
+              {% else %}
+                {{ bout.opponent }}
+              {% endif %}
+            </span>
+            <span>
+              {% if bout.source_url %}
+                <a href="{{ bout.source_url }}" target="_blank" rel="noopener noreferrer">{{ bout.event_name }}</a>
+              {% else %}
+                {{ bout.event_name }}
+              {% endif %}
+            </span>
+            <span>{{ bout.method }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state inline">
+        <h2>Previous fights are being collected.</h2>
+        <p>A chronological fight record will appear here as verified bout history is matched to this fighter.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+<section class="band">
   <div class="fighter-coverage-section">
     <div>
       <p class="eyebrow">Recent coverage</p>
@@ -144,10 +189,10 @@
   </div>
 </section>
 <section class="band">
-  <h2>Fight history</h2>
+  <h2>Defeat tree</h2>
   {% if fight_result_count == 0 %}
     <div class="empty-state">
-      <h2>Fight history is being prepared.</h2>
+      <h2>Opponent chains are being prepared.</h2>
       <p>Opponent chains will appear here as verified bout history becomes available.</p>
     </div>
   {% else %}

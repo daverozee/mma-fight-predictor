@@ -21,6 +21,14 @@ services:
         value: 21600
       - key: DATA_IMPORT_RUN_ON_STARTUP
         value: true
+      - key: HISTORICAL_FIGHT_RESULTS_URL
+        sync: false
+      - key: HISTORICAL_FIGHT_RESULTS_FORMAT
+        value: winner-loser
+      - key: HISTORICAL_FIGHT_RESULTS_EVENTS_URL
+        sync: false
+      - key: HISTORICAL_FIGHT_RESULTS_SOURCE
+        value: configured-fight-history
       - key: PORT
         value: 10000
     disk:
@@ -49,6 +57,14 @@ services:
         value: 21600
       - key: DATA_IMPORT_RUN_ON_STARTUP
         value: true
+      - key: HISTORICAL_FIGHT_RESULTS_URL
+        sync: false
+      - key: HISTORICAL_FIGHT_RESULTS_FORMAT
+        value: winner-loser
+      - key: HISTORICAL_FIGHT_RESULTS_EVENTS_URL
+        sync: false
+      - key: HISTORICAL_FIGHT_RESULTS_SOURCE
+        value: configured-fight-history
 
 databases:
   - name: mma-fight-predictor-db

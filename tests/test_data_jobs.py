@@ -29,8 +29,13 @@ def test_run_data_import_cycle_collects_import_summary(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         data_jobs,
+        "import_configured_historical_fights",
+        lambda db, settings: calls.append(("historical_fights", None)) or 6,
+    )
+    monkeypatch.setattr(
+        data_jobs,
         "import_media_overrides",
-        lambda db: calls.append(("media", None)) or 6,
+        lambda db: calls.append(("media", None)) or 7,
     )
     monkeypatch.setattr(
         data_jobs,
@@ -60,13 +65,15 @@ def test_run_data_import_cycle_collects_import_summary(monkeypatch) -> None:
         ("catalog", "catalog.json"),
         ("promote", None),
         ("current_fights", None),
+        ("historical_fights", None),
         ("media", None),
         ("improve_media", (500, 25, 50)),
     ]
     assert summary.records_seen == 12
     assert summary.profiles_promoted == 4
     assert summary.current_fights_imported == 5
-    assert summary.media_overrides_imported == 6
+    assert summary.historical_fights_imported == 6
+    assert summary.media_overrides_imported == 7
     assert summary.media_improvement["generated"] == 7
     assert summary.media_improvement["broken"] == 13
     assert summary.fighters_in_db == 100

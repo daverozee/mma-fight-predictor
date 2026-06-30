@@ -11,12 +11,10 @@
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">M</span><span>MMA Fight Predictor</span></a>
       <nav>
         {% if user %}
-          <a href="/dashboard">Dashboard</a>
           <a href="/fighters">Fighters</a>
+          <a href="/predict">Predict</a>
           <a href="/rankings">Rankings</a>
           <a href="/odds-sites">Odds</a>
-          <a href="/predict">Predict</a>
-          <a href="/tree">Tree</a>
           <form method="post" action="/logout">
             <button type="submit" class="link-button">Logout</button>
           </form>

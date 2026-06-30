@@ -120,7 +120,7 @@ def register(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     request.session["user_id"] = result.user.id
-    return RedirectResponse("/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse("/fighters", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -144,18 +144,13 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
     request.session["user_id"] = result.user.id
-    return RedirectResponse("/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse("/fighters", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.post("/logout")
 def logout(request: Request) -> RedirectResponse:
     request.session.clear()
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
-
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, user: User = Depends(require_user)) -> HTMLResponse:
-    return templates.TemplateResponse(request, "dashboard.html", {"user": user})
 
 
 @app.get("/fighters", response_class=HTMLResponse)
@@ -393,31 +388,6 @@ def predict_from_profiles(
             "fighter_a_thumbnail": media_urls[profile_a.name],
             "fighter_b_thumbnail": media_urls[profile_b.name],
             "result": result,
-        },
-    )
-
-
-@app.get("/tree", response_class=HTMLResponse)
-def tree_page(
-    request: Request,
-    user: User = Depends(require_user),
-    db: Session = Depends(get_db),
-    fighter_id: int | None = Query(default=None),
-) -> HTMLResponse:
-    selected = get_fighter(db, fighter_id) if fighter_id else None
-    tree = (
-        build_defeat_tree(db, selected, depth=2, max_children=30)
-        if selected and fight_result_count(db)
-        else None
-    )
-    return templates.TemplateResponse(
-        request,
-        "tree.html",
-        {
-            "user": user,
-            "selected": selected,
-            "tree": tree,
-            "fight_result_count": fight_result_count(db),
         },
     )
 

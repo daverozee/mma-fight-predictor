@@ -38,6 +38,7 @@ def test_auth_and_prediction_flow() -> None:
             follow_redirects=False,
         )
         assert response.status_code == 303
+        assert response.headers["location"] == "/fighters"
 
         response = client.get("/predict")
         assert response.status_code == 200
@@ -123,6 +124,10 @@ def test_fighter_profiles_can_drive_prediction() -> None:
 
         response = client.get("/fighters")
         assert response.status_code == 200
+        assert 'href="/fighters"' in response.text
+        assert 'href="/predict"' in response.text
+        assert 'href="/dashboard"' not in response.text
+        assert 'href="/tree"' not in response.text
         assert "Find a fighter" in response.text
         assert "Page 1 of" in response.text
         assert "Next" in response.text
@@ -155,6 +160,10 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert response.status_code == 200
         assert "Core profile" in response.text
         assert "Weight" in response.text
+        assert "Fight history" in response.text
+        assert "fighter-tree" in response.text
+        assert "tree-expand-all" in response.text
+        assert "/tree?" not in response.text
         assert "Recent coverage" in response.text
         assert "Recent coverage is not available right now." in response.text
 
@@ -166,8 +175,8 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert "Matchup outlook" in response.text
 
 
-def test_tree_page_uses_searchable_fighter_picker() -> None:
-    email = f"tree-{uuid4()}@example.com"
+def test_redundant_dashboard_and_tree_pages_are_removed() -> None:
+    email = f"removed-pages-{uuid4()}@example.com"
     password = "good-password"
 
     with TestClient(app) as client:
@@ -179,16 +188,10 @@ def test_tree_page_uses_searchable_fighter_picker() -> None:
         assert response.status_code == 303
 
         response = client.get("/tree")
-        assert response.status_code == 200
-        assert "Search by fighter name" in response.text
-        assert "tree-fighter-search" in response.text
-        assert "<select" not in response.text
+        assert response.status_code == 404
 
-        response = client.get("/tree?fighter_id=9407")
-        assert response.status_code == 200
-        assert "tree-expand-all" in response.text
-        assert "tree-collapse-all" in response.text
-        assert 'href="/fighters/9407"' in response.text
+        response = client.get("/dashboard")
+        assert response.status_code == 404
 
 
 def test_public_api_lists_fighters_and_predicts() -> None:

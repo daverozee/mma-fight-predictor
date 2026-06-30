@@ -2,6 +2,43 @@
 {% macro stat(label, value) %}
   <div><span>{{ label }}</span><strong>{{ value }}</strong></div>
 {% endmacro %}
+{% macro render_node(node) %}
+  <li class="{% if node.defeated %}has-children{% else %}is-leaf{% endif %}">
+    <details open>
+      <summary>
+        <span class="tree-toggle" aria-hidden="true"></span>
+        {% if node.id %}
+          <a class="tree-fighter-link" href="/fighters/{{ node.id }}">
+            <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
+            <span>
+              <strong>{{ node.name }}</strong>
+              {% if node.bout_date or node.method %}
+                <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
+              {% endif %}
+            </span>
+          </a>
+        {% else %}
+          <span class="tree-fighter-link tree-fighter-static">
+            <img class="fighter-thumb" src="{{ node.thumbnail_url }}" alt="">
+            <span>
+              <strong>{{ node.name }}</strong>
+              {% if node.bout_date or node.method %}
+                <small>{{ node.bout_date or "Date unavailable" }}{% if node.method %} - {{ node.method }}{% endif %}</small>
+              {% endif %}
+            </span>
+          </span>
+        {% endif %}
+      </summary>
+      {% if node.defeated %}
+        <ul>
+          {% for child in node.defeated %}
+            {{ render_node(child) }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </details>
+  </li>
+{% endmacro %}
 {% block content %}
 <section class="fighter-detail-head">
   <img class="fighter-portrait" src="{{ thumbnail_url }}" alt="">
@@ -11,7 +48,6 @@
     <p>{{ fighter.wins | int }}-{{ fighter.losses | int }} record · {{ fighter.reach_cm | round(1) }} cm reach · {{ fighter.height_cm | round(1) }} cm height</p>
     <div class="actions">
       <a class="button" href="/predict">Analyze matchup</a>
-      <a class="button secondary" href="/tree?fighter_id={{ fighter.id }}">Open fight history</a>
       {% if fighter.instagram_url %}
         <a class="button secondary social-button" href="{{ fighter.instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>
       {% endif %}
@@ -82,8 +118,34 @@
     </div>
   {% else %}
     <div class="actions">
-      <a class="button secondary" href="/tree?fighter_id={{ fighter.id }}">Explore defeat tree</a>
+      <button class="button secondary small" type="button" id="tree-expand-all">Expand all</button>
+      <button class="button secondary small" type="button" id="tree-collapse-all">Collapse all</button>
+    </div>
+    <div class="tree-shell">
+      <ul class="fighter-tree">
+        {{ render_node(tree) }}
+      </ul>
     </div>
   {% endif %}
 </section>
+<script>
+  document.querySelectorAll(".tree-fighter-link[href]").forEach((link) => {
+    link.addEventListener("click", (event) => event.stopPropagation());
+  });
+
+  const expandAll = document.getElementById("tree-expand-all");
+  const collapseAll = document.getElementById("tree-collapse-all");
+  if (expandAll && collapseAll) {
+    expandAll.addEventListener("click", () => {
+      document.querySelectorAll(".fighter-tree details").forEach((detail) => {
+        detail.open = true;
+      });
+    });
+    collapseAll.addEventListener("click", () => {
+      document.querySelectorAll(".fighter-tree details").forEach((detail, index) => {
+        detail.open = index === 0;
+      });
+    });
+  }
+</script>
 {% endblock %}

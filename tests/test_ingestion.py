@@ -190,6 +190,18 @@ def test_existing_unknown_profile_uses_external_weight_context() -> None:
                     numeric_value=231,
                     source="test",
                 ),
+                FighterExternalFeature(
+                    fighter_name="Josh Hokit",
+                    feature_name="balldontlie_fighters_live_record_wins",
+                    numeric_value=10,
+                    source="test",
+                ),
+                FighterExternalFeature(
+                    fighter_name="Josh Hokit",
+                    feature_name="balldontlie_fighters_live_record_losses",
+                    numeric_value=0,
+                    source="test",
+                ),
             ]
         )
         db.commit()
@@ -199,6 +211,8 @@ def test_existing_unknown_profile_uses_external_weight_context() -> None:
         features = profile_to_features(profile, features_for_fighter(db, profile.name))
 
     assert profile.weight_class == "Heavyweight"
+    assert profile.wins == 10
+    assert profile.losses == 0
     assert features.weight_class == "Heavyweight"
     assert features.weight_lbs == 231
     assert fighter_profile_context(profile, features_for_fighter(db, profile.name))[

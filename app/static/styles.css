@@ -844,7 +844,8 @@ legend {
   position: relative;
   min-height: 390px;
   display: grid;
-  align-content: end;
+  grid-template-rows: auto 220px minmax(78px, auto) auto auto auto;
+  align-content: stretch;
   gap: 10px;
   overflow: hidden;
   padding: 18px;
@@ -882,6 +883,8 @@ legend {
   height: 220px;
   justify-self: center;
   border-radius: 12px;
+  object-fit: contain;
+  object-position: center center;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
 }
@@ -901,6 +904,7 @@ legend {
 }
 
 .corner-card h2 {
+  min-height: 72px;
   margin: 0;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
   line-height: 1;
@@ -1940,6 +1944,7 @@ legend {
 
   .corner-card {
     min-height: 320px;
+    grid-template-rows: auto 160px minmax(56px, auto) auto auto auto;
   }
 
   .corner-card .fighter-portrait {

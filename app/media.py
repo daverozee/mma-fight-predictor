@@ -4,9 +4,11 @@ import json
 import re
 import urllib.parse
 import urllib.request
+from csv import DictReader
 from collections.abc import Iterable
 from datetime import datetime
 from html import escape
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,6 +24,7 @@ MEDIA_KEYWORDS = (
     "professional fighter",
     "martial artist",
 )
+MEDIA_OVERRIDES_PATH = Path(__file__).resolve().parent / "data" / "fighter_media_overrides.csv"
 
 
 def seed_generated_media(db: Session, limit: int | None = None) -> int:
@@ -103,6 +106,33 @@ def fetch_wikidata_mma_media(db: Session, limit: int | None = None) -> dict[str,
             db.commit()
     db.commit()
     return {"checked": len(rows), "matched": matched, "skipped": skipped}
+
+
+def import_media_overrides(db: Session, csv_path: Path = MEDIA_OVERRIDES_PATH) -> int:
+    if not csv_path.exists():
+        return 0
+
+    profiles = {profile.name: profile.id for profile in db.scalars(select(FighterProfile)).all()}
+    imported = 0
+    with csv_path.open("r", encoding="utf-8", newline="") as file:
+        for row in DictReader(file):
+            fighter_name = (row.get("fighter_name") or "").strip()
+            thumbnail_url = (row.get("thumbnail_url") or "").strip()
+            if not fighter_name or not thumbnail_url:
+                continue
+            media = db.scalar(select(FighterMedia).where(FighterMedia.fighter_name == fighter_name))
+            if media is None:
+                media = FighterMedia(fighter_name=fighter_name)
+                db.add(media)
+            media.fighter_profile_id = profiles.get(fighter_name)
+            media.thumbnail_url = thumbnail_url
+            media.page_url = (row.get("page_url") or "").strip() or None
+            media.source = "curated-media-override"
+            media.status = "found"
+            media.fetched_at = datetime.utcnow()
+            imported += 1
+    db.commit()
+    return imported
 
 
 def wikimedia_thumbnail(name: str) -> dict[str, str] | None:

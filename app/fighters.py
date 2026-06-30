@@ -135,30 +135,29 @@ def promote_imported_fighters_to_profiles(db: Session, limit: int | None = None)
 
 
 def refresh_profile_context_from_features(db: Session) -> int:
-    profiles = list(
-        db.scalars(
-            select(FighterProfile).where(
-                (FighterProfile.weight_class == "Unknown")
-                | (FighterProfile.weight_class == "")
-            )
-        ).all()
-    )
+    profiles = list(db.scalars(select(FighterProfile)).all())
     if not profiles:
         return 0
 
     profile_names = [profile.name for profile in profiles]
-    weight_feature_names = {
+    context_feature_names = {
         "balldontlie_fighters_live_weight_class_name",
         "balldontlie_fighters_live_weight_class_abbreviation",
+        "balldontlie_fighters_live_record_wins",
+        "balldontlie_fighters_live_record_losses",
         "weight_class.name",
         "weight_class",
     }
-    rows = db.scalars(
-        select(FighterExternalFeature).where(
-            FighterExternalFeature.fighter_name.in_(profile_names),
-            FighterExternalFeature.feature_name.in_(weight_feature_names),
+    rows = []
+    for name_chunk in chunks(profile_names, 500):
+        rows.extend(
+            db.scalars(
+                select(FighterExternalFeature).where(
+                    FighterExternalFeature.fighter_name.in_(name_chunk),
+                    FighterExternalFeature.feature_name.in_(context_feature_names),
+                )
+            ).all()
         )
-    ).all()
     feature_maps: dict[str, dict[str, str | float]] = {}
     for row in rows:
         feature_maps.setdefault(row.fighter_name, {})[row.feature_name] = (
@@ -167,9 +166,18 @@ def refresh_profile_context_from_features(db: Session) -> int:
 
     updated = 0
     for profile in profiles:
-        weight_class = resolved_weight_class(profile.weight_class, feature_maps.get(profile.name))
+        feature_map = feature_maps.get(profile.name)
+        weight_class = resolved_weight_class(profile.weight_class, feature_map)
         if weight_class != profile.weight_class:
             profile.weight_class = weight_class
+            updated += 1
+        wins = numeric_feature(feature_map or {}, "balldontlie_fighters_live_record_wins")
+        losses = numeric_feature(feature_map or {}, "balldontlie_fighters_live_record_losses")
+        if wins is not None and wins != profile.wins:
+            profile.wins = wins
+            updated += 1
+        if losses is not None and losses != profile.losses:
+            profile.losses = losses
             updated += 1
     return updated
 
@@ -416,3 +424,7 @@ def _row_to_payload(row: dict[str, str], source: str) -> dict[str, str | float]:
     if instagram_url:
         payload["instagram_url"] = instagram_url
     return payload
+
+
+def chunks(values: list[str], size: int) -> list[list[str]]:
+    return [values[index : index + size] for index in range(0, len(values), size)]

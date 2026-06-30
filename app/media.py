@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 import re
+import struct
 import urllib.parse
 import urllib.request
 from csv import DictReader
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import datetime
 from html import escape
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -25,6 +28,15 @@ MEDIA_KEYWORDS = (
     "martial artist",
 )
 MEDIA_OVERRIDES_PATH = Path(__file__).resolve().parent / "data" / "fighter_media_overrides.csv"
+MIN_VISIBLE_IMAGE_SIZE = 64
+
+
+@dataclass(frozen=True)
+class ImageHealth:
+    valid: bool
+    width: int | None = None
+    height: int | None = None
+    reason: str | None = None
 
 
 def seed_generated_media(db: Session, limit: int | None = None) -> int:
@@ -56,7 +68,7 @@ def seed_generated_media(db: Session, limit: int | None = None) -> int:
 def fetch_wikimedia_media(db: Session, limit: int | None = None) -> dict[str, int]:
     query = (
         select(FighterMedia)
-        .where(FighterMedia.status.in_(("generated", "missing")))
+        .where(FighterMedia.status.in_(("generated", "missing", "broken")))
         .order_by(FighterMedia.fighter_name)
     )
     if limit:
@@ -81,6 +93,158 @@ def fetch_wikimedia_media(db: Session, limit: int | None = None) -> dict[str, in
             db.commit()
     db.commit()
     return {"checked": checked, "found": found, "missing": missing}
+
+
+def improve_fighter_media(
+    db: Session,
+    seed_limit: int | None = None,
+    wikimedia_limit: int = 25,
+    verification_limit: int = 50,
+) -> dict[str, int]:
+    generated = seed_generated_media(db, limit=seed_limit)
+    lookup = fetch_wikimedia_media(db, limit=wikimedia_limit) if wikimedia_limit else {
+        "checked": 0,
+        "found": 0,
+        "missing": 0,
+    }
+    verified = verify_media_urls(db, limit=verification_limit) if verification_limit else {
+        "checked": 0,
+        "valid": 0,
+        "broken": 0,
+    }
+    return {
+        "generated": generated,
+        "wikimedia_checked": lookup["checked"],
+        "wikimedia_found": lookup["found"],
+        "wikimedia_missing": lookup["missing"],
+        "verified": verified["checked"],
+        "valid": verified["valid"],
+        "broken": verified["broken"],
+    }
+
+
+def verify_media_urls(db: Session, limit: int = 50) -> dict[str, int]:
+    rows = db.scalars(
+        select(FighterMedia)
+        .where(FighterMedia.status == "found", FighterMedia.thumbnail_url.is_not(None))
+        .order_by(FighterMedia.fetched_at, FighterMedia.fighter_name)
+        .limit(limit)
+    ).all()
+
+    checked = valid = broken = 0
+    for media in rows:
+        checked += 1
+        health = image_url_health(media.thumbnail_url or "")
+        media.fetched_at = datetime.utcnow()
+        if health.valid:
+            valid += 1
+        else:
+            media.status = "broken"
+            broken += 1
+        if checked % 25 == 0:
+            db.commit()
+    db.commit()
+    return {"checked": checked, "valid": valid, "broken": broken}
+
+
+def image_url_health(
+    url: str,
+    opener: Any = urllib.request.urlopen,
+    timeout: int = 8,
+    max_bytes: int = 512_000,
+) -> ImageHealth:
+    if not url.startswith(("http://", "https://")):
+        return ImageHealth(valid=False, reason="unsupported_url")
+
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "mma-fight-predictor/0.1 (image verification)",
+            "Range": f"bytes=0-{max_bytes - 1}",
+        },
+    )
+    try:
+        with opener(request, timeout=timeout) as response:
+            content_type = str(response.headers.get("Content-Type", "")).lower()
+            body = response.read(max_bytes)
+    except Exception:  # noqa: BLE001
+        return ImageHealth(valid=False, reason="fetch_failed")
+
+    width, height = image_dimensions(body)
+    if not content_type.startswith("image/") and width is None:
+        return ImageHealth(valid=False, reason="not_image")
+    if width is None or height is None:
+        return ImageHealth(valid=False, reason="unknown_dimensions")
+    if width < MIN_VISIBLE_IMAGE_SIZE or height < MIN_VISIBLE_IMAGE_SIZE:
+        return ImageHealth(valid=False, width=width, height=height, reason="too_small")
+    return ImageHealth(valid=True, width=width, height=height)
+
+
+def image_dimensions(data: bytes) -> tuple[int | None, int | None]:
+    if len(data) >= 24 and data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return struct.unpack(">II", data[16:24])
+    if len(data) >= 10 and data[:6] in {b"GIF87a", b"GIF89a"}:
+        return struct.unpack("<HH", data[6:10])
+    if len(data) >= 4 and data.startswith(b"\xff\xd8"):
+        return jpeg_dimensions(data)
+    if len(data) >= 30 and data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return webp_dimensions(data)
+    return None, None
+
+
+def jpeg_dimensions(data: bytes) -> tuple[int | None, int | None]:
+    index = 2
+    while index + 9 < len(data):
+        if data[index] != 0xFF:
+            index += 1
+            continue
+        marker = data[index + 1]
+        index += 2
+        if marker in {0xD8, 0xD9}:
+            continue
+        if index + 2 > len(data):
+            break
+        length = int.from_bytes(data[index : index + 2], "big")
+        if length < 2 or index + length > len(data):
+            break
+        if marker in {
+            0xC0,
+            0xC1,
+            0xC2,
+            0xC3,
+            0xC5,
+            0xC6,
+            0xC7,
+            0xC9,
+            0xCA,
+            0xCB,
+            0xCD,
+            0xCE,
+            0xCF,
+        }:
+            height = int.from_bytes(data[index + 3 : index + 5], "big")
+            width = int.from_bytes(data[index + 5 : index + 7], "big")
+            return width, height
+        index += length
+    return None, None
+
+
+def webp_dimensions(data: bytes) -> tuple[int | None, int | None]:
+    chunk = data[12:16]
+    if chunk == b"VP8 " and len(data) >= 30:
+        width = int.from_bytes(data[26:28], "little") & 0x3FFF
+        height = int.from_bytes(data[28:30], "little") & 0x3FFF
+        return width, height
+    if chunk == b"VP8L" and len(data) >= 25:
+        bits = int.from_bytes(data[21:25], "little")
+        width = (bits & 0x3FFF) + 1
+        height = ((bits >> 14) & 0x3FFF) + 1
+        return width, height
+    if chunk == b"VP8X" and len(data) >= 30:
+        width = int.from_bytes(data[24:27] + b"\x00", "little") + 1
+        height = int.from_bytes(data[27:30] + b"\x00", "little") + 1
+        return width, height
+    return None, None
 
 
 def fetch_wikidata_mma_media(db: Session, limit: int | None = None) -> dict[str, int]:

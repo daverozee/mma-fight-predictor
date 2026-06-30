@@ -35,6 +35,10 @@ def main() -> None:
         f"profiles_promoted={summary.profiles_promoted}, "
         f"current_fights_imported={summary.current_fights_imported}, "
         f"media_overrides_imported={summary.media_overrides_imported}, "
+        f"media_generated={summary.media_improvement['generated']}, "
+        f"media_found={summary.media_improvement['wikimedia_found']}, "
+        f"media_verified={summary.media_improvement['verified']}, "
+        f"media_broken={summary.media_improvement['broken']}, "
         f"fighters_in_db={summary.fighters_in_db}, "
         f"external_features_in_db={summary.external_features_in_db}"
     )

@@ -105,6 +105,8 @@ python scripts/run_import_worker.py --once
 
 With Docker, the worker runs this cycle on startup and then every
 `DATA_IMPORT_INTERVAL_SECONDS` seconds. The default interval is six hours.
+Each worker cycle also improves fighter images in small batches by seeding missing media
+rows, checking Wikimedia for public thumbnails, and verifying existing image URLs.
 
 Import UFC bout-history edges for the defeat tree:
 
@@ -188,6 +190,8 @@ See `API.md` or `/api-docs` in the running app for examples.
 
 The import worker seeds and refreshes `fighter_profiles` from the configured source catalog.
 The prediction page compares two saved profiles directly from the roster search.
+Image quality improves gradually through the worker. Tune the per-cycle image work with
+`MEDIA_SEED_LIMIT`, `MEDIA_WIKIMEDIA_LOOKUP_LIMIT`, and `MEDIA_VERIFICATION_LIMIT`.
 
 ## Low-Cost Hosting Direction
 

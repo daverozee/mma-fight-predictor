@@ -34,6 +34,22 @@ def test_run_data_import_cycle_collects_import_summary(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         data_jobs,
+        "improve_fighter_media",
+        lambda db, seed_limit, wikimedia_limit, verification_limit: calls.append(
+            ("improve_media", (seed_limit, wikimedia_limit, verification_limit))
+        )
+        or {
+            "generated": 7,
+            "wikimedia_checked": 8,
+            "wikimedia_found": 9,
+            "wikimedia_missing": 10,
+            "verified": 11,
+            "valid": 12,
+            "broken": 13,
+        },
+    )
+    monkeypatch.setattr(
+        data_jobs,
         "ingestion_counts",
         lambda db: {"fighters": 100, "external_features": 200},
     )
@@ -45,10 +61,13 @@ def test_run_data_import_cycle_collects_import_summary(monkeypatch) -> None:
         ("promote", None),
         ("current_fights", None),
         ("media", None),
+        ("improve_media", (500, 25, 50)),
     ]
     assert summary.records_seen == 12
     assert summary.profiles_promoted == 4
     assert summary.current_fights_imported == 5
     assert summary.media_overrides_imported == 6
+    assert summary.media_improvement["generated"] == 7
+    assert summary.media_improvement["broken"] == 13
     assert summary.fighters_in_db == 100
     assert summary.source_results == ["sample-source"]

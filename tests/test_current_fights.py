@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.current_fights import import_current_fight_results
 from app.database import Base
-from app.media import import_media_overrides
+from app.media import image_url_health, import_media_overrides
 from app.models import FightResult, FighterMedia, FighterProfile
 
 
@@ -78,6 +78,24 @@ def test_import_media_overrides_replaces_bad_thumbnail(tmp_path: Path) -> None:
     assert media.source == "curated-media-override"
 
 
+def test_image_url_health_accepts_visible_png() -> None:
+    health = image_url_health("https://example.com/fighter.png", opener=FakeImageResponse.open_png)
+
+    assert health.valid is True
+    assert health.width == 128
+    assert health.height == 96
+
+
+def test_image_url_health_rejects_tiny_or_non_image_payloads() -> None:
+    tiny = image_url_health("https://example.com/tiny.png", opener=FakeImageResponse.open_tiny_png)
+    html = image_url_health("https://example.com/not-image", opener=FakeImageResponse.open_html)
+
+    assert tiny.valid is False
+    assert tiny.reason == "too_small"
+    assert html.valid is False
+    assert html.reason == "not_image"
+
+
 def profile(name: str) -> FighterProfile:
     return FighterProfile(
         name=name,
@@ -94,4 +112,41 @@ def profile(name: str) -> FighterProfile:
         strikes_landed_per_min=4.0,
         strikes_absorbed_per_min=3.0,
         source="test",
+    )
+
+
+class FakeImageResponse:
+    def __init__(self, body: bytes, content_type: str) -> None:
+        self.body = body
+        self.headers = {"Content-Type": content_type}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        return self.body if size < 0 else self.body[:size]
+
+    @staticmethod
+    def open_png(request, timeout: int):
+        return FakeImageResponse(png_header(128, 96), "image/png")
+
+    @staticmethod
+    def open_tiny_png(request, timeout: int):
+        return FakeImageResponse(png_header(32, 32), "image/png")
+
+    @staticmethod
+    def open_html(request, timeout: int):
+        return FakeImageResponse(b"<html></html>", "text/html")
+
+
+def png_header(width: int, height: int) -> bytes:
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR"
+        + width.to_bytes(4, "big")
+        + height.to_bytes(4, "big")
+        + b"\x08\x02\x00\x00\x00"
     )

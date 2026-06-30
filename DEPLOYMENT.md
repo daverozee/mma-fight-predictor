@@ -52,6 +52,9 @@ DATABASE_URL=postgresql+psycopg://...
 MODEL_PATH=/app/storage/model.joblib
 DATA_IMPORT_INTERVAL_SECONDS=21600
 DATA_IMPORT_RUN_ON_STARTUP=true
+MEDIA_SEED_LIMIT=500
+MEDIA_WIKIMEDIA_LOOKUP_LIMIT=25
+MEDIA_VERIFICATION_LIMIT=50
 ```
 
 The starter ships with SQLite dependencies only. Add a Postgres driver, such as `psycopg[binary]`, when moving to Postgres.

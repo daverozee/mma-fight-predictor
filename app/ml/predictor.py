@@ -110,13 +110,17 @@ def apply_probability_adjustment(probability_a: float, adjustment: float) -> flo
 
 
 def weight_class_adjustment(fighter_a: FighterFeatures, fighter_b: FighterFeatures) -> float:
-    limit_a = weight_class_limit_lbs(fighter_a.weight_class)
-    limit_b = weight_class_limit_lbs(fighter_b.weight_class)
-    if limit_a is None or limit_b is None or limit_a == limit_b:
+    weight_a = effective_weight_lbs(fighter_a)
+    weight_b = effective_weight_lbs(fighter_b)
+    if weight_a is None or weight_b is None or weight_a == weight_b:
         return 0.0
-    difference = limit_a - limit_b
-    adjustment = max(-0.55, min(0.55, (difference / 100) * 0.5))
+    difference = weight_a - weight_b
+    adjustment = max(-0.6, min(0.6, (difference / 100) * 0.65))
     return round(adjustment, 3)
+
+
+def effective_weight_lbs(fighter: FighterFeatures) -> float | None:
+    return fighter.weight_lbs or weight_class_limit_lbs(fighter.weight_class)
 
 
 def career_arc_adjustment(career_arc: dict[str, object] | None) -> float:
@@ -132,14 +136,14 @@ def weight_class_insights(
     adjustment = weight_class_adjustment(fighter_a, fighter_b)
     if abs(adjustment) <= EPSILON:
         return []
-    limit_a = weight_class_limit_lbs(fighter_a.weight_class)
-    limit_b = weight_class_limit_lbs(fighter_b.weight_class)
+    weight_a = effective_weight_lbs(fighter_a)
+    weight_b = effective_weight_lbs(fighter_b)
     class_a = canonical_weight_class(fighter_a.weight_class) or fighter_a.weight_class
     class_b = canonical_weight_class(fighter_b.weight_class) or fighter_b.weight_class
     advantage = fighter_a.name if adjustment > 0 else fighter_b.name
     heavier = class_a if adjustment > 0 else class_b
     lighter = class_b if adjustment > 0 else class_a
-    gap = abs((limit_a or 0) - (limit_b or 0))
+    gap = abs((weight_a or 0) - (weight_b or 0))
     return [
         {
             "label": "Weight class",

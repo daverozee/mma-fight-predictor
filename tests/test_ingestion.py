@@ -5,7 +5,11 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.fighters import promote_imported_fighters_to_profiles
+from app.fighters import (
+    features_for_fighter,
+    profile_to_features,
+    promote_imported_fighters_to_profiles,
+)
 from app.ingestion.connectors import flatten_record, import_catalog, source_enabled, with_query_params
 from app.models import FighterExternalFeature, FighterProfile
 
@@ -145,6 +149,57 @@ def test_imported_fighters_can_be_promoted_to_provisional_profiles(tmp_path: Pat
     assert profile.weight_class == "Lightweight"
     assert profile.height_cm == 177.8
     assert profile.wins == 10
+
+
+def test_existing_unknown_profile_uses_external_weight_context() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    with Session() as db:
+        db.add(
+            FighterProfile(
+                name="Josh Hokit",
+                weight_class="Unknown",
+                age=30,
+                height_cm=176,
+                reach_cm=180,
+                wins=10,
+                losses=3,
+                ko_rate=0.34,
+                submission_rate=0.22,
+                takedown_accuracy=0.45,
+                takedown_defense=0.69,
+                strikes_landed_per_min=4.4,
+                strikes_absorbed_per_min=3.4,
+                source="test",
+            )
+        )
+        db.add_all(
+            [
+                FighterExternalFeature(
+                    fighter_name="Josh Hokit",
+                    feature_name="balldontlie_fighters_live_weight_class_abbreviation",
+                    text_value="HW",
+                    source="test",
+                ),
+                FighterExternalFeature(
+                    fighter_name="Josh Hokit",
+                    feature_name="balldontlie_fighters_live_weight_lbs",
+                    numeric_value=231,
+                    source="test",
+                ),
+            ]
+        )
+        db.commit()
+
+        promote_imported_fighters_to_profiles(db)
+        profile = db.scalar(select(FighterProfile).where(FighterProfile.name == "Josh Hokit"))
+        features = profile_to_features(profile, features_for_fighter(db, profile.name))
+
+    assert profile.weight_class == "Heavyweight"
+    assert features.weight_class == "Heavyweight"
+    assert features.weight_lbs == 231
 
 
 def test_live_sources_can_be_env_gated(monkeypatch) -> None:

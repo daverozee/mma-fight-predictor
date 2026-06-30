@@ -235,7 +235,7 @@ def upsert_profile(
     if not payload:
         return None, False, False
 
-    FighterFeatures(**{key: payload[key] for key in FighterFeatures.model_fields})
+    FighterFeatures(**{key: payload[key] for key in FighterFeatures.model_fields if key in payload})
     profile = db.scalar(select(FighterProfile).where(FighterProfile.name == payload["name"]))
     if profile is None:
         db.add(FighterProfile(**payload, source=source["name"]))

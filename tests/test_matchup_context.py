@@ -49,6 +49,47 @@ def test_weight_class_mismatch_can_override_smaller_fighter_metrics() -> None:
     assert result["insights"][0]["label"] == "Weight class"
 
 
+def test_actual_weight_handles_unknown_saved_class() -> None:
+    lightweight = FighterFeatures(
+        name="Conor McGregor",
+        weight_class="Lightweight",
+        weight_lbs=155,
+        age=37,
+        height_cm=175,
+        reach_cm=188,
+        wins=22,
+        losses=6,
+        ko_rate=0.93,
+        submission_rate=0.07,
+        takedown_accuracy=0.56,
+        takedown_defense=0.66,
+        strikes_landed_per_min=5.3,
+        strikes_absorbed_per_min=4.7,
+    )
+    heavyweight = FighterFeatures(
+        name="Josh Hokit",
+        weight_class="Heavyweight",
+        weight_lbs=231,
+        age=30,
+        height_cm=185,
+        reach_cm=185,
+        wins=10,
+        losses=3,
+        ko_rate=0.34,
+        submission_rate=0.22,
+        takedown_accuracy=0.45,
+        takedown_defense=0.69,
+        strikes_landed_per_min=4.4,
+        strikes_absorbed_per_min=3.4,
+    )
+
+    result = FightPredictor().predict(lightweight, heavyweight)
+
+    assert result["winner"] == "Josh Hokit"
+    assert result["probability_b"] > 0.5
+    assert "76 lb" in result["insights"][0]["detail"]
+
+
 def test_career_arc_context_favors_active_success_over_old_peak() -> None:
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)

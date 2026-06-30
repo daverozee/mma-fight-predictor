@@ -128,8 +128,27 @@ def promote_imported_fighters_to_profiles(db: Session, limit: int | None = None)
             FighterExternalFeature.fighter_profile_id.is_(None),
         ).update({"fighter_profile_id": profile.id})
         created += 1
+    refresh_profile_context_from_features(db)
     db.commit()
     return created
+
+
+def refresh_profile_context_from_features(db: Session) -> int:
+    profiles = list(
+        db.scalars(
+            select(FighterProfile).where(
+                (FighterProfile.weight_class == "Unknown")
+                | (FighterProfile.weight_class == "")
+            )
+        ).all()
+    )
+    updated = 0
+    for profile in profiles:
+        weight_class = resolved_weight_class(profile.weight_class, features_for_fighter(db, profile.name))
+        if weight_class != profile.weight_class:
+            profile.weight_class = weight_class
+            updated += 1
+    return updated
 
 
 def features_for_fighter(db: Session, name: str) -> dict[str, str | float]:
@@ -204,6 +223,38 @@ def weight_class_name(value: str | float | None) -> str | None:
     return WEIGHT_CLASS_NAMES.get(value.upper(), value)
 
 
+def resolved_weight_class(
+    profile_weight_class: str | None,
+    features: dict[str, str | float] | None,
+) -> str:
+    if profile_weight_class and profile_weight_class.strip() and profile_weight_class != "Unknown":
+        return profile_weight_class
+    features = features or {}
+    for key in (
+        "balldontlie_fighters_live_weight_class_name",
+        "weight_class.name",
+        "weight_class",
+    ):
+        value = features.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    abbreviation = weight_class_name(features.get("balldontlie_fighters_live_weight_class_abbreviation"))
+    return abbreviation or "Unknown"
+
+
+def resolved_weight_lbs(features: dict[str, str | float] | None) -> float | None:
+    features = features or {}
+    for key in (
+        "weight_lbs",
+        "balldontlie_fighters_live_weight_lbs",
+        "fighter_weight_lbs",
+    ):
+        value = numeric_feature(features, key)
+        if value is not None:
+            return value
+    return None
+
+
 def first_instagram_url(features: dict[str, str | float]) -> str | None:
     for key, value in features.items():
         if "instagram" in key.lower():
@@ -217,10 +268,14 @@ def get_fighter(db: Session, fighter_id: int) -> FighterProfile | None:
     return db.get(FighterProfile, fighter_id)
 
 
-def profile_to_features(profile: FighterProfile) -> FighterFeatures:
+def profile_to_features(
+    profile: FighterProfile,
+    feature_map: dict[str, str | float] | None = None,
+) -> FighterFeatures:
     return FighterFeatures(
         name=profile.name,
-        weight_class=profile.weight_class,
+        weight_class=resolved_weight_class(profile.weight_class, feature_map),
+        weight_lbs=resolved_weight_lbs(feature_map),
         age=profile.age,
         height_cm=profile.height_cm,
         reach_cm=profile.reach_cm,
@@ -247,7 +302,9 @@ def import_fighter_profiles(db: Session, csv_path: str | Path, source: str = "cs
             raise ValueError(f"Fighter CSV is missing columns: {sorted(missing)}")
 
         payload = _row_to_payload(row, source)
-        FighterFeatures(**{key: payload[key] for key in FighterFeatures.model_fields})
+        FighterFeatures(
+            **{key: payload[key] for key in FighterFeatures.model_fields if key in payload}
+        )
         profile = db.scalar(select(FighterProfile).where(FighterProfile.name == payload["name"]))
         if profile is None:
             profile = FighterProfile(**payload)

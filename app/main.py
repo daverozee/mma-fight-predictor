@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.database import get_db, init_db
 from app.fighters import (
     fighter_data_counts,
+    features_for_fighter,
     get_fighter,
     profile_to_features,
     promote_imported_fighters_to_profiles,
@@ -367,8 +368,8 @@ def predict_from_profiles(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    fighter_a = profile_to_features(profile_a)
-    fighter_b = profile_to_features(profile_b)
+    fighter_a = profile_to_features(profile_a, features_for_fighter(db, profile_a.name))
+    fighter_b = profile_to_features(profile_b, features_for_fighter(db, profile_b.name))
     result = predictor.predict(
         fighter_a,
         fighter_b,
@@ -504,8 +505,8 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
     if profile_a is None or profile_b is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
 
-    fighter_a = profile_to_features(profile_a)
-    fighter_b = profile_to_features(profile_b)
+    fighter_a = profile_to_features(profile_a, features_for_fighter(db, profile_a.name))
+    fighter_b = profile_to_features(profile_b, features_for_fighter(db, profile_b.name))
     result = predictor.predict(
         fighter_a,
         fighter_b,

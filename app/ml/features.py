@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class FighterFeatures(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     weight_class: str = Field(default="Unknown", max_length=80)
+    weight_lbs: float | None = Field(default=None, ge=90, le=300)
     age: float = Field(ge=18, le=60)
     height_cm: float = Field(ge=140, le=230)
     reach_cm: float = Field(ge=140, le=230)

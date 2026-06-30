@@ -29,7 +29,7 @@ Start the app:
 docker compose up --build
 ```
 
-Compose starts a `web` service for the portal and a `worker` service for scheduled
+Compose starts `db` for Postgres, `web` for the portal, and `worker` for scheduled
 data imports.
 
 Open http://localhost:8000.
@@ -37,6 +37,7 @@ Open http://localhost:8000.
 ## Run With Python
 
 ```powershell
+docker compose up -d db
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
@@ -46,6 +47,13 @@ uvicorn app.main:app --reload
 ```
 
 Open http://localhost:8000.
+
+To copy an existing local SQLite database into the Postgres database, start Postgres and run:
+
+```powershell
+docker compose up -d db
+python scripts/migrate_sqlite_to_postgres.py
+```
 
 ## Development
 
@@ -195,9 +203,8 @@ Image quality improves gradually through the worker. Tune the per-cycle image wo
 
 ## Low-Cost Hosting Direction
 
-Good first deployment targets are Render, Fly.io, Railway, or a small VPS. For the
-earliest version, local Docker Compose can run a web container plus a worker container
-against shared SQLite storage. For a public hosted app, move to managed Postgres before
-splitting web and worker across separate platform services, and set a strong `SECRET_KEY`.
+Good first deployment targets are Render, Fly.io, Railway, or a small VPS. Local Docker
+Compose runs Postgres, web, and worker containers. For a public hosted app, use managed
+Postgres or a self-hosted Postgres instance, and set a strong `SECRET_KEY`.
 
 See `DEPLOYMENT.md` for more detail.

@@ -1377,7 +1377,7 @@ legend {
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -1405,6 +1405,85 @@ legend {
 
 .profile-stat-grid strong {
   text-align: right;
+}
+
+.career-curve-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.career-chart {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.career-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.career-chart-axis,
+.career-chart-gridline {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.career-chart-gridline {
+  stroke-dasharray: 4 5;
+}
+
+.career-chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.5;
+}
+
+.career-chart-point {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.career-chart-point.loss {
+  stroke: #87948d;
+}
+
+.career-chart-label,
+.career-chart-axis-title {
+  fill: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.career-chart-axis-title {
+  fill: var(--accent-strong);
+  text-transform: uppercase;
+}
+
+.career-curve-summary,
+.career-curve-empty {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.career-curve-summary strong {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.career-curve-summary span,
+.career-curve-empty span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.45;
 }
 
 .fighter-coverage-section {
@@ -1874,6 +1953,12 @@ legend {
 
 .tree-fighter-static {
   cursor: default;
+}
+
+@media (max-width: 1040px) {
+  .fighter-detail-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 760px) {

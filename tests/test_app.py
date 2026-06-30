@@ -161,6 +161,8 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert response.status_code == 200
         assert "Core profile" in response.text
         assert "Weight" in response.text
+        assert "Career curve" in response.text
+        assert "Victory count over time" in response.text
         assert "Fight history" in response.text
         assert "fighter-tree" in response.text
         assert "tree-expand-all" in response.text

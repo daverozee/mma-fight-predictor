@@ -83,6 +83,40 @@
         {{ stat("Absorbed per min", fighter.strikes_absorbed_per_min | round(1)) }}
       </div>
     </article>
+    <article class="career-curve-card">
+      <h2>Career curve</h2>
+      {% if career_curve.available %}
+        <div class="career-chart" aria-label="Victory count over time for {{ fighter.name }}">
+          <svg class="career-chart-svg" viewBox="{{ career_curve.viewbox }}" role="img">
+            <title>{{ fighter.name }} victory count over time</title>
+            <line class="career-chart-gridline" x1="{{ career_curve.axis.x1 }}" y1="{{ career_curve.axis.y1 }}" x2="{{ career_curve.axis.x2 }}" y2="{{ career_curve.axis.y1 }}"></line>
+            <line class="career-chart-axis" x1="{{ career_curve.axis.x1 }}" y1="{{ career_curve.axis.y1 }}" x2="{{ career_curve.axis.x1 }}" y2="{{ career_curve.axis.y2 }}"></line>
+            <line class="career-chart-axis" x1="{{ career_curve.axis.x1 }}" y1="{{ career_curve.axis.y2 }}" x2="{{ career_curve.axis.x2 }}" y2="{{ career_curve.axis.y2 }}"></line>
+            <text class="career-chart-label" x="8" y="{{ career_curve.axis.y1 + 4 }}">{{ career_curve.y_max }}</text>
+            <text class="career-chart-label" x="16" y="{{ career_curve.axis.y2 + 4 }}">0</text>
+            <text class="career-chart-label" x="{{ career_curve.axis.x1 }}" y="160">{{ career_curve.first_label }}</text>
+            <text class="career-chart-label" x="{{ career_curve.axis.x2 }}" y="160" text-anchor="end">{{ career_curve.last_label }}</text>
+            <text class="career-chart-axis-title" x="172" y="168" text-anchor="middle">Time</text>
+            <text class="career-chart-axis-title" x="8" y="86" text-anchor="middle" transform="rotate(-90 8 86)">Victory count</text>
+            <polyline class="career-chart-line" points="{{ career_curve.polyline }}"></polyline>
+            {% for point in career_curve.points %}
+              <circle class="career-chart-point {% if point.outcome == 'Win' %}win{% else %}loss{% endif %}" cx="{{ point.x }}" cy="{{ point.y }}" r="3.4">
+                <title>{{ point.date_label }} - {{ point.outcome }} vs {{ point.opponent }}; {{ point.victories }} victories</title>
+              </circle>
+            {% endfor %}
+          </svg>
+        </div>
+        <div class="career-curve-summary">
+          <strong>{{ career_curve.total_victories }}</strong>
+          <span>charted victories across {{ career_curve.total_bouts }} dated bouts</span>
+        </div>
+      {% else %}
+        <div class="career-curve-empty">
+          <strong>Career curve unavailable</strong>
+          <span>Victory count over time will appear here as verified fight history expands.</span>
+        </div>
+      {% endif %}
+    </article>
   </div>
 </section>
 <section class="band">

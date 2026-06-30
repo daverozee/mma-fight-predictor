@@ -45,6 +45,8 @@ def test_auth_and_prediction_flow() -> None:
         assert "Choose two fighters from the roster search to analyze." in response.text
         assert "Choose two fighters" in response.text
         assert "Include online sentiment" in response.text
+        assert "Alex Mercer" not in response.text
+        assert "Predict winner" not in response.text
 
         payload = {
             "a_name": "Alex Mercer",

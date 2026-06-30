@@ -2,7 +2,7 @@
 {% block content %}
 <section class="page-head compact">
   <h1>Analyze matchup</h1>
-  <p>Search the roster, select two fighters, or enter a custom matchup.</p>
+  <p>Search the roster and select two fighters to analyze.</p>
   {% if error %}<p class="alert">{{ error }}</p>{% endif %}
 </section>
 {% if fighters_available %}
@@ -35,36 +35,6 @@
   </fieldset>
 </form>
 {% endif %}
-<form method="post" action="/predict" class="matchup-form">
-  {% for prefix, label, defaults in [
-    ("a", "Fighter A", ["Alex Mercer", "Lightweight", 29, 178, 185, 15, 3, 0.42, 0.18, 0.46, 0.72, 4.8, 3.1]),
-    ("b", "Fighter B", ["Jordan Vale", "Lightweight", 32, 175, 180, 13, 5, 0.31, 0.24, 0.41, 0.66, 3.9, 3.8])
-  ] %}
-  <fieldset>
-    <legend>{{ label }}</legend>
-    <label>Name<input name="{{ prefix }}_name" value="{{ defaults[0] }}" required></label>
-    <div class="form-grid">
-      <label>Weight class<input name="{{ prefix }}_weight_class" value="{{ defaults[1] }}" required></label>
-      <label>Age<input name="{{ prefix }}_age" type="number" step="0.1" min="18" max="60" value="{{ defaults[2] }}" required></label>
-      <label>Height cm<input name="{{ prefix }}_height_cm" type="number" step="0.1" value="{{ defaults[3] }}" required></label>
-      <label>Reach cm<input name="{{ prefix }}_reach_cm" type="number" step="0.1" value="{{ defaults[4] }}" required></label>
-      <label>Wins<input name="{{ prefix }}_wins" type="number" step="1" min="0" value="{{ defaults[5] }}" required></label>
-      <label>Losses<input name="{{ prefix }}_losses" type="number" step="1" min="0" value="{{ defaults[6] }}" required></label>
-      <label>KO rate<input name="{{ prefix }}_ko_rate" type="number" step="0.01" min="0" max="1" value="{{ defaults[7] }}" required></label>
-      <label>Submission rate<input name="{{ prefix }}_submission_rate" type="number" step="0.01" min="0" max="1" value="{{ defaults[8] }}" required></label>
-      <label>Takedown accuracy<input name="{{ prefix }}_takedown_accuracy" type="number" step="0.01" min="0" max="1" value="{{ defaults[9] }}" required></label>
-      <label>Takedown defense<input name="{{ prefix }}_takedown_defense" type="number" step="0.01" min="0" max="1" value="{{ defaults[10] }}" required></label>
-      <label>Strikes landed/min<input name="{{ prefix }}_strikes_landed_per_min" type="number" step="0.1" min="0" value="{{ defaults[11] }}" required></label>
-      <label>Strikes absorbed/min<input name="{{ prefix }}_strikes_absorbed_per_min" type="number" step="0.1" value="{{ defaults[12] }}" required></label>
-    </div>
-  </fieldset>
-  {% endfor %}
-  <label class="sentiment-toggle">
-    <input type="checkbox" name="include_sentiment" value="true" checked>
-    <span><strong>Include online sentiment</strong><small>Samples recent public search coverage as a light matchup signal.</small></span>
-  </label>
-  <button class="button" type="submit">Predict winner</button>
-</form>
 <script>
   const searchState = { a: null, b: null };
   const submitButton = document.querySelector("[data-matchup-submit]");

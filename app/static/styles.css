@@ -842,10 +842,10 @@ legend {
 
 .corner-card {
   position: relative;
-  min-height: 390px;
+  min-height: 480px;
   display: grid;
-  grid-template-rows: auto 220px minmax(78px, auto) auto auto auto;
-  align-content: stretch;
+  grid-template-rows: 28px 220px 78px 20px 44px 8px;
+  align-items: start;
   gap: 10px;
   overflow: hidden;
   padding: 18px;
@@ -879,8 +879,10 @@ legend {
 }
 
 .corner-card .fighter-portrait {
+  grid-row: 2;
   width: min(100%, 220px);
   height: 220px;
+  align-self: start;
   justify-self: center;
   border-radius: 12px;
   object-fit: contain;
@@ -890,8 +892,9 @@ legend {
 }
 
 .corner-label {
+  grid-row: 1;
   width: max-content;
-  min-height: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   padding: 0 9px;
@@ -904,23 +907,29 @@ legend {
 }
 
 .corner-card h2 {
-  min-height: 72px;
+  grid-row: 3;
+  min-height: 0;
   margin: 0;
+  align-self: end;
+  overflow: hidden;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
   line-height: 1;
 }
 
 .corner-card p {
+  grid-row: 4;
   margin: 0;
   color: rgba(255, 255, 255, 0.66);
 }
 
 .corner-card strong {
+  grid-row: 5;
   font-size: 2.2rem;
   line-height: 1;
 }
 
 .probability-track {
+  grid-row: 6;
   height: 8px;
   overflow: hidden;
   border-radius: 999px;
@@ -1943,8 +1952,8 @@ legend {
   }
 
   .corner-card {
-    min-height: 320px;
-    grid-template-rows: auto 160px minmax(56px, auto) auto auto auto;
+    min-height: 392px;
+    grid-template-rows: 28px 160px 56px 20px 36px 8px;
   }
 
   .corner-card .fighter-portrait {

@@ -29,6 +29,9 @@ Start the app:
 docker compose up --build
 ```
 
+Compose starts a `web` service for the portal and a `worker` service for scheduled
+data imports.
+
 Open http://localhost:8000.
 
 ## Run With Python
@@ -94,6 +97,15 @@ Run a full configured import:
 python scripts/import_data.py
 ```
 
+Run the same import cycle once through the worker entrypoint:
+
+```powershell
+python scripts/run_import_worker.py --once
+```
+
+With Docker, the worker runs this cycle on startup and then every
+`DATA_IMPORT_INTERVAL_SECONDS` seconds. The default interval is six hours.
+
 Import UFC bout-history edges for the defeat tree:
 
 ```powershell
@@ -141,6 +153,8 @@ With Docker:
 
 ```powershell
 docker compose up -d --build
+docker compose logs -f worker
+docker compose exec -T worker python scripts/run_import_worker.py --once
 docker compose exec -T web python scripts/import_balldontlie_fights.py
 docker compose exec -T web python scripts/import_ufcstats_features.py
 docker compose exec -T web python scripts/import_social_links.py
@@ -172,10 +186,14 @@ See `API.md` or `/api-docs` in the running app for examples.
 
 ## Fighter Profiles
 
-On startup the app seeds `fighter_profiles` from `app/data/sample_fighters.csv` when the table is empty. The prediction page can compare two saved profiles directly, while manual entry remains available for newer stats or hypothetical matchups.
+The import worker seeds and refreshes `fighter_profiles` from the configured source catalog.
+The prediction page compares two saved profiles directly from the roster search.
 
 ## Low-Cost Hosting Direction
 
-Good first deployment targets are Render, Fly.io, Railway, or a small VPS. For the earliest version, a single Docker container with SQLite volume storage is fine for demos. For a public app, move to managed Postgres and set a strong `SECRET_KEY`.
+Good first deployment targets are Render, Fly.io, Railway, or a small VPS. For the
+earliest version, local Docker Compose can run a web container plus a worker container
+against shared SQLite storage. For a public hosted app, move to managed Postgres before
+splitting web and worker across separate platform services, and set a strong `SECRET_KEY`.
 
 See `DEPLOYMENT.md` for more detail.

@@ -11,7 +11,6 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import authenticate_user, create_user
 from app.config import get_settings
-from app.current_fights import import_current_fight_results
 from app.database import get_db, init_db
 from app.fighters import (
     fighter_data_counts,
@@ -19,12 +18,10 @@ from app.fighters import (
     features_for_fighter,
     get_fighter,
     profile_to_features,
-    promote_imported_fighters_to_profiles,
     search_fighters,
 )
 from app.fight_tree import build_defeat_tree, fight_result_count
-from app.ingestion.connectors import import_catalog, ingestion_counts
-from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls, import_media_overrides
+from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
 from app.matchup_context import career_arc_context
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
@@ -39,13 +36,6 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
-    with next(get_db()) as db:
-        counts = ingestion_counts(db)
-        if counts["fighters"] == 0 or counts["external_features"] == 0:
-            import_catalog(db)
-        promote_imported_fighters_to_profiles(db)
-        import_current_fight_results(db)
-        import_media_overrides(db)
     yield
 
 

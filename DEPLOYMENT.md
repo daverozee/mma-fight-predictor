@@ -8,7 +8,13 @@ Use Docker Compose for local development:
 docker compose up --build
 ```
 
-The `storage/` directory is mounted into the container so the SQLite database and model artifact survive rebuilds.
+The `web` service handles HTTP requests. The `worker` service runs scheduled data
+imports through `scripts/run_import_worker.py`. The `storage/` directory is mounted into
+both containers so the SQLite database and model artifact survive rebuilds.
+
+For hosted multi-service deployments, use managed Postgres before splitting web and
+worker across separate platform services. Local Docker Compose can share `./storage`,
+but most hosting platforms do not share a SQLite disk between services.
 
 ## Affordable Cloud Options
 
@@ -33,7 +39,7 @@ For a public version, prefer:
 - Managed Postgres instead of SQLite
 - Strong `SECRET_KEY`
 - HTTPS handled by the platform
-- Background worker or scheduled job for data ingestion and model retraining
+- Background worker process for data ingestion and model retraining
 - Separate object storage for trained model artifacts if they become large
 
 ## Environment Variables
@@ -44,6 +50,8 @@ APP_ENV=production
 SECRET_KEY=replace-with-a-long-random-value
 DATABASE_URL=postgresql+psycopg://...
 MODEL_PATH=/app/storage/model.joblib
+DATA_IMPORT_INTERVAL_SECONDS=21600
+DATA_IMPORT_RUN_ON_STARTUP=true
 ```
 
 The starter ships with SQLite dependencies only. Add a Postgres driver, such as `psycopg[binary]`, when moving to Postgres.

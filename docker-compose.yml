@@ -9,3 +9,12 @@ services:
       - ./storage:/app/storage
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  worker:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./storage:/app/storage
+      - ./app:/app/app
+      - ./scripts:/app/scripts
+    command: python scripts/run_import_worker.py

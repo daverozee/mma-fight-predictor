@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     google_search_engine_id: str | None = None
     sentiment_search_results: int = 5
     fighter_article_results: int = 3
+    data_import_interval_seconds: int = 21_600
+    data_import_run_on_startup: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

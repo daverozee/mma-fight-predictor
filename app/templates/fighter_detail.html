@@ -98,13 +98,13 @@
             <text class="career-chart-label" x="{{ career_curve.axis.x2 }}" y="160" text-anchor="end">{{ career_curve.last_label }}</text>
             <text class="career-chart-axis-title" x="172" y="168" text-anchor="middle">Time</text>
             <text class="career-chart-axis-title" x="8" y="86" text-anchor="middle" transform="rotate(-90 8 86)">Fight count</text>
-            <polyline class="career-chart-line win-line" points="{{ career_curve.win_polyline }}"></polyline>
-            <polyline class="career-chart-line loss-line" points="{{ career_curve.loss_polyline }}"></polyline>
+            <polyline class="career-chart-line win-line" points="{{ career_curve.win_polyline }}" stroke="#176b51"></polyline>
+            <polyline class="career-chart-line loss-line" points="{{ career_curve.loss_polyline }}" stroke="#bb2c30"></polyline>
             {% for point in career_curve.points %}
-              <circle class="career-chart-point win" cx="{{ point.x }}" cy="{{ point.victory_y }}" r="3.2">
+              <circle class="career-chart-point win" cx="{{ point.x }}" cy="{{ point.victory_y }}" r="3.2" stroke="#176b51">
                 <title>{{ point.date_label }} - {{ point.victories }} wins</title>
               </circle>
-              <circle class="career-chart-point loss" cx="{{ point.x }}" cy="{{ point.loss_y }}" r="3.2">
+              <circle class="career-chart-point loss" cx="{{ point.x }}" cy="{{ point.loss_y }}" r="3.2" stroke="#bb2c30">
                 <title>{{ point.date_label }} - {{ point.losses }} losses</title>
               </circle>
             {% endfor %}

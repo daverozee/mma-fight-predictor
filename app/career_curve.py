@@ -38,25 +38,30 @@ def fighter_career_curve(db: Session, fighter: FighterProfile) -> dict[str, obje
             "available": False,
             "total_bouts": 0,
             "total_victories": 0,
+            "total_losses": 0,
             "viewbox": f"0 0 {VIEWBOX_WIDTH} {VIEWBOX_HEIGHT}",
         }
 
     victories = 0
+    losses = 0
     raw_points = []
     for fought_on, _row_id, won, row in dated_results:
         if won:
             victories += 1
+        else:
+            losses += 1
         raw_points.append(
             {
                 "date": fought_on,
                 "date_label": fought_on.strftime("%b %Y"),
                 "victories": victories,
+                "losses": losses,
                 "outcome": "Win" if won else "Loss",
                 "opponent": row.loser_name if won else row.winner_name,
             }
         )
 
-    max_victories = max(1, victories)
+    y_max = max(1, victories, losses)
     first_date = raw_points[0]["date"]
     last_date = raw_points[-1]["date"]
     span_days = (last_date - first_date).days
@@ -67,21 +72,30 @@ def fighter_career_curve(db: Session, fighter: FighterProfile) -> dict[str, obje
             x_ratio = (point["date"] - first_date).days / span_days
         else:
             x_ratio = index / max(len(raw_points) - 1, 1)
-        y_ratio = point["victories"] / max_victories
+        victory_y_ratio = point["victories"] / y_max
+        loss_y_ratio = point["losses"] / y_max
         x = round(CHART_LEFT + x_ratio * CHART_WIDTH, 1)
-        y = round(bottom_y - y_ratio * CHART_HEIGHT, 1)
+        victory_y = round(bottom_y - victory_y_ratio * CHART_HEIGHT, 1)
+        loss_y = round(bottom_y - loss_y_ratio * CHART_HEIGHT, 1)
         points.append(
             {
                 "x": x,
-                "y": y,
+                "victory_y": victory_y,
+                "loss_y": loss_y,
                 "date_label": point["date_label"],
                 "victories": point["victories"],
+                "losses": point["losses"],
                 "outcome": point["outcome"],
                 "opponent": point["opponent"],
             }
         )
 
-    polyline = " ".join([f"{CHART_LEFT},{bottom_y}", *[f"{p['x']},{p['y']}" for p in points]])
+    win_polyline = " ".join(
+        [f"{CHART_LEFT},{bottom_y}", *[f"{p['x']},{p['victory_y']}" for p in points]]
+    )
+    loss_polyline = " ".join(
+        [f"{CHART_LEFT},{bottom_y}", *[f"{p['x']},{p['loss_y']}" for p in points]]
+    )
     return {
         "available": True,
         "viewbox": f"0 0 {VIEWBOX_WIDTH} {VIEWBOX_HEIGHT}",
@@ -95,7 +109,9 @@ def fighter_career_curve(db: Session, fighter: FighterProfile) -> dict[str, obje
         "last_label": last_date.strftime("%Y"),
         "total_bouts": len(raw_points),
         "total_victories": victories,
-        "y_max": max_victories,
-        "polyline": polyline,
+        "total_losses": losses,
+        "y_max": y_max,
+        "win_polyline": win_polyline,
+        "loss_polyline": loss_polyline,
         "points": points,
     }

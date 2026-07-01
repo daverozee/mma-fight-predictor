@@ -60,7 +60,12 @@ def test_fighter_career_curve_tracks_cumulative_victories() -> None:
 
     assert curve["available"] is True
     assert curve["total_victories"] == 2
+    assert curve["total_losses"] == 1
     assert curve["total_bouts"] == 3
     assert [point["victories"] for point in curve["points"]] == [1, 1, 2]
+    assert [point["losses"] for point in curve["points"]] == [0, 1, 1]
+    assert curve["y_max"] == 2
+    assert curve["win_polyline"]
+    assert curve["loss_polyline"]
     assert curve["first_label"] == "2020"
     assert curve["last_label"] == "2022"

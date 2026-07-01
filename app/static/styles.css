@@ -1513,20 +1513,30 @@ legend {
 
 .career-chart-line {
   fill: none;
-  stroke: var(--accent);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3.5;
 }
 
+.career-chart-line.win-line {
+  stroke: var(--accent);
+}
+
+.career-chart-line.loss-line {
+  stroke: var(--red-corner);
+}
+
 .career-chart-point {
   fill: #fff;
-  stroke: var(--accent);
   stroke-width: 2;
 }
 
+.career-chart-point.win {
+  stroke: var(--accent);
+}
+
 .career-chart-point.loss {
-  stroke: #87948d;
+  stroke: var(--red-corner);
 }
 
 .career-chart-label,
@@ -1539,6 +1549,36 @@ legend {
 .career-chart-axis-title {
   fill: var(--accent-strong);
   text-transform: uppercase;
+}
+
+.career-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.career-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.legend-swatch {
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.legend-swatch.win {
+  background: var(--accent);
+}
+
+.legend-swatch.loss {
+  background: var(--red-corner);
 }
 
 .career-curve-summary,

@@ -115,6 +115,9 @@ With Docker, the worker runs this cycle on startup and then every
 `DATA_IMPORT_INTERVAL_SECONDS` seconds. The default interval is six hours.
 Each worker cycle also improves fighter images in small batches by seeding missing media
 rows, checking Wikimedia for public thumbnails, and verifying existing image URLs.
+When `BALLDONTLIE_API_KEY` is set, the worker also imports completed fights from the
+BALLDONTLIE MMA `/fights` endpoint so recent career arcs do not depend only on static
+archives.
 If `HISTORICAL_FIGHT_RESULTS_URL` is set, the worker also runs a historical bout-history
 import each cycle and skips previously imported bouts.
 
@@ -147,6 +150,15 @@ python scripts/import_balldontlie_fights.py
 ```
 
 This requires BALLDONTLIE account access to the MMA `/fights` endpoint.
+
+Audit fight-history freshness across the roster:
+
+```powershell
+python scripts/audit_fight_history_freshness.py --limit 100
+```
+
+The audit compares each profile's record against matched bout-history rows and flags
+fighters whose fight ledger appears stale or incomplete.
 
 Import richer UFCStats-derived career features and fight aggregates:
 

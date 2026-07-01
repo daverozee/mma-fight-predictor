@@ -21,6 +21,14 @@ services:
         value: 21600
       - key: DATA_IMPORT_RUN_ON_STARTUP
         value: true
+      - key: BALLDONTLIE_FIGHTS_IMPORT_ENABLED
+        value: true
+      - key: BALLDONTLIE_FIGHTS_PER_PAGE
+        value: 100
+      - key: BALLDONTLIE_FIGHTS_MAX_PAGES
+        value: 250
+      - key: BALLDONTLIE_FIGHTS_PAUSE_SECONDS
+        value: 0
       - key: HISTORICAL_FIGHT_RESULTS_URL
         sync: false
       - key: HISTORICAL_FIGHT_RESULTS_FORMAT
@@ -57,6 +65,14 @@ services:
         value: 21600
       - key: DATA_IMPORT_RUN_ON_STARTUP
         value: true
+      - key: BALLDONTLIE_FIGHTS_IMPORT_ENABLED
+        value: true
+      - key: BALLDONTLIE_FIGHTS_PER_PAGE
+        value: 100
+      - key: BALLDONTLIE_FIGHTS_MAX_PAGES
+        value: 250
+      - key: BALLDONTLIE_FIGHTS_PAUSE_SECONDS
+        value: 0
       - key: HISTORICAL_FIGHT_RESULTS_URL
         sync: false
       - key: HISTORICAL_FIGHT_RESULTS_FORMAT

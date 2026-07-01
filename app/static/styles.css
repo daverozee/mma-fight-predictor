@@ -1522,8 +1522,13 @@ legend {
   stroke: var(--accent);
 }
 
-.career-chart-line.loss-line {
-  stroke: var(--red-corner) !important;
+.career-chart-loss-line {
+  fill: none;
+  stroke: #d11f2a;
+  stroke-dasharray: 7 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
 }
 
 .career-chart-point {
@@ -1536,7 +1541,7 @@ legend {
 }
 
 .career-chart-point.loss {
-  stroke: var(--red-corner) !important;
+  stroke: #d11f2a !important;
 }
 
 .career-chart-label,
@@ -1578,7 +1583,7 @@ legend {
 }
 
 .legend-swatch.loss {
-  background: var(--red-corner);
+  background: #d11f2a;
 }
 
 .career-curve-summary,

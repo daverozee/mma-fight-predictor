@@ -13,7 +13,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import FighterMedia, FighterProfile
@@ -26,6 +26,14 @@ MEDIA_KEYWORDS = (
     "bellator",
     "professional fighter",
     "martial artist",
+    "combat sport",
+)
+COMMONS_IMAGE_SEARCHES = (
+    '"{name}" MMA fighter',
+    '"{name}" mixed martial arts',
+    '"{name}" UFC fighter',
+    '"{name}" Bellator fighter',
+    '"{name}" professional fighter',
 )
 MEDIA_OVERRIDES_PATH = Path(__file__).resolve().parent / "data" / "fighter_media_overrides.csv"
 MIN_VISIBLE_IMAGE_SIZE = 64
@@ -68,8 +76,15 @@ def seed_generated_media(db: Session, limit: int | None = None) -> int:
 def fetch_wikimedia_media(db: Session, limit: int | None = None) -> dict[str, int]:
     query = (
         select(FighterMedia)
+        .outerjoin(FighterProfile, FighterMedia.fighter_name == FighterProfile.name)
         .where(FighterMedia.status.in_(("generated", "missing", "broken")))
-        .order_by(FighterMedia.fighter_name)
+        .order_by(
+            (
+                func.coalesce(FighterProfile.wins, 0)
+                + func.coalesce(FighterProfile.losses, 0)
+            ).desc(),
+            FighterMedia.fighter_name,
+        )
     )
     if limit:
         query = query.limit(limit)
@@ -77,16 +92,16 @@ def fetch_wikimedia_media(db: Session, limit: int | None = None) -> dict[str, in
     found = missing = checked = 0
     for media in db.scalars(query):
         checked += 1
-        result = wikimedia_thumbnail(media.fighter_name)
+        result = public_fighter_thumbnail(media.fighter_name)
         media.fetched_at = datetime.utcnow()
         if result is None:
             media.status = "missing"
-            media.source = "wikimedia-summary"
+            media.source = "public-image-search"
             missing += 1
         else:
             media.thumbnail_url = result["thumbnail_url"]
             media.page_url = result["page_url"]
-            media.source = "wikimedia-summary"
+            media.source = result["source"]
             media.status = "found"
             found += 1
         if checked % 50 == 0:
@@ -100,8 +115,14 @@ def improve_fighter_media(
     seed_limit: int | None = None,
     wikimedia_limit: int = 25,
     verification_limit: int = 50,
+    wikidata_bulk_limit: int = 500,
 ) -> dict[str, int]:
     generated = seed_generated_media(db, limit=seed_limit)
+    wikidata = fetch_wikidata_mma_media(db, limit=wikidata_bulk_limit) if wikidata_bulk_limit else {
+        "checked": 0,
+        "matched": 0,
+        "skipped": 0,
+    }
     lookup = fetch_wikimedia_media(db, limit=wikimedia_limit) if wikimedia_limit else {
         "checked": 0,
         "found": 0,
@@ -114,6 +135,9 @@ def improve_fighter_media(
     }
     return {
         "generated": generated,
+        "wikidata_checked": wikidata["checked"],
+        "wikidata_matched": wikidata["matched"],
+        "wikidata_skipped": wikidata["skipped"],
         "wikimedia_checked": lookup["checked"],
         "wikimedia_found": lookup["found"],
         "wikimedia_missing": lookup["missing"],
@@ -126,7 +150,10 @@ def improve_fighter_media(
 def verify_media_urls(db: Session, limit: int = 50) -> dict[str, int]:
     rows = db.scalars(
         select(FighterMedia)
-        .where(FighterMedia.status == "found", FighterMedia.thumbnail_url.is_not(None))
+        .where(
+            FighterMedia.status.in_(("found", "broken")),
+            FighterMedia.thumbnail_url.is_not(None),
+        )
         .order_by(FighterMedia.fetched_at, FighterMedia.fighter_name)
         .limit(limit)
     ).all()
@@ -137,8 +164,9 @@ def verify_media_urls(db: Session, limit: int = 50) -> dict[str, int]:
         health = image_url_health(media.thumbnail_url or "")
         media.fetched_at = datetime.utcnow()
         if health.valid:
+            media.status = "found"
             valid += 1
-        else:
+        elif health.reason != "fetch_failed":
             media.status = "broken"
             broken += 1
         if checked % 25 == 0:
@@ -248,7 +276,10 @@ def webp_dimensions(data: bytes) -> tuple[int | None, int | None]:
 
 
 def fetch_wikidata_mma_media(db: Session, limit: int | None = None) -> dict[str, int]:
-    rows = wikidata_mma_image_rows(limit=limit)
+    try:
+        rows = wikidata_mma_image_rows(limit=limit)
+    except Exception:  # noqa: BLE001
+        return {"checked": 0, "matched": 0, "skipped": 0}
     media_by_name = {
         row.fighter_name.lower(): row
         for row in db.scalars(select(FighterMedia)).all()
@@ -299,14 +330,36 @@ def import_media_overrides(db: Session, csv_path: Path = MEDIA_OVERRIDES_PATH) -
     return imported
 
 
+def public_fighter_thumbnail(
+    name: str,
+    opener: Any = urllib.request.urlopen,
+) -> dict[str, str] | None:
+    for lookup in (
+        wikipedia_summary_thumbnail,
+        wikidata_entity_thumbnail,
+        commons_search_thumbnail,
+    ):
+        result = lookup(name, opener=opener)
+        if result:
+            return result
+    return None
+
+
 def wikimedia_thumbnail(name: str) -> dict[str, str] | None:
+    return wikipedia_summary_thumbnail(name)
+
+
+def wikipedia_summary_thumbnail(
+    name: str,
+    opener: Any = urllib.request.urlopen,
+) -> dict[str, str] | None:
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(name)}"
     request = urllib.request.Request(
         url,
         headers={"User-Agent": "mma-fight-predictor/0.1 (thumbnail lookup)"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=10) as response:
+        with opener(request, timeout=10) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except Exception:  # noqa: BLE001
         return None
@@ -319,7 +372,168 @@ def wikimedia_thumbnail(name: str) -> dict[str, str] | None:
     page_url = (payload.get("content_urls") or {}).get("desktop", {}).get("page")
     if not thumbnail_url:
         return None
-    return {"thumbnail_url": str(thumbnail_url), "page_url": str(page_url or "")}
+    return {
+        "thumbnail_url": str(thumbnail_url),
+        "page_url": str(page_url or ""),
+        "source": "wikipedia-summary",
+    }
+
+
+def wikidata_entity_thumbnail(
+    name: str,
+    opener: Any = urllib.request.urlopen,
+) -> dict[str, str] | None:
+    for entity in wikidata_search_entities(name, opener=opener):
+        if not wikidata_entity_is_likely_fighter(name, entity):
+            continue
+        image = wikidata_entity_image(entity["id"], opener=opener)
+        if image:
+            return image
+    return None
+
+
+def wikidata_search_entities(
+    name: str,
+    opener: Any = urllib.request.urlopen,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode(
+        {
+            "action": "wbsearchentities",
+            "format": "json",
+            "language": "en",
+            "uselang": "en",
+            "type": "item",
+            "limit": limit,
+            "search": name,
+        }
+    )
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "mma-fight-predictor/0.1 (wikidata entity image lookup)"},
+    )
+    try:
+        with opener(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return []
+    return [item for item in payload.get("search", []) if isinstance(item, dict)]
+
+
+def wikidata_entity_is_likely_fighter(name: str, entity: dict[str, Any]) -> bool:
+    labels = [entity.get("label"), entity.get("title")]
+    aliases = entity.get("aliases") or []
+    labels.extend(alias for alias in aliases if isinstance(alias, str))
+    if not any(name_matches_label(name, str(label or "")) for label in labels):
+        return False
+
+    description = str(entity.get("description") or "").lower()
+    return any(keyword in description for keyword in MEDIA_KEYWORDS)
+
+
+def wikidata_entity_image(
+    entity_id: str,
+    opener: Any = urllib.request.urlopen,
+) -> dict[str, str] | None:
+    url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode(
+        {
+            "action": "wbgetentities",
+            "format": "json",
+            "ids": entity_id,
+            "props": "claims|sitelinks",
+            "sitefilter": "enwiki",
+        }
+    )
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "mma-fight-predictor/0.1 (wikidata entity image lookup)"},
+    )
+    try:
+        with opener(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+    entity = (payload.get("entities") or {}).get(entity_id) or {}
+    claims = entity.get("claims") or {}
+    image_claim = next(iter(claims.get("P18") or []), None)
+    if not image_claim:
+        return None
+    value = (
+        image_claim.get("mainsnak", {})
+        .get("datavalue", {})
+        .get("value")
+    )
+    if not value:
+        return None
+
+    page_url = f"https://www.wikidata.org/wiki/{urllib.parse.quote(entity_id)}"
+    enwiki_title = (
+        (entity.get("sitelinks") or {})
+        .get("enwiki", {})
+        .get("title")
+    )
+    if enwiki_title:
+        page_url = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(str(enwiki_title).replace(' ', '_'))}"
+    return {
+        "thumbnail_url": commons_file_url(str(value)),
+        "page_url": page_url,
+        "source": "wikidata-entity-image",
+    }
+
+
+def commons_search_thumbnail(
+    name: str,
+    opener: Any = urllib.request.urlopen,
+) -> dict[str, str] | None:
+    for search in COMMONS_IMAGE_SEARCHES:
+        result = commons_image_search(search.format(name=name), name=name, opener=opener)
+        if result:
+            return result
+    return None
+
+
+def commons_image_search(
+    search: str,
+    name: str,
+    opener: Any = urllib.request.urlopen,
+    limit: int = 5,
+) -> dict[str, str] | None:
+    url = "https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "generator": "search",
+            "gsrnamespace": 6,
+            "gsrlimit": limit,
+            "gsrsearch": search,
+            "prop": "imageinfo",
+            "iiprop": "url",
+            "iiurlwidth": 160,
+        }
+    )
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "mma-fight-predictor/0.1 (commons image lookup)"},
+    )
+    try:
+        with opener(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+
+    pages = (payload.get("query") or {}).get("pages") or {}
+    for page in pages.values():
+        imageinfo = next(iter(page.get("imageinfo") or []), {})
+        thumbnail_url = imageinfo.get("thumburl") or imageinfo.get("url")
+        title = str(page.get("title") or "")
+        if thumbnail_url and commons_result_matches_name(name, title, str(thumbnail_url)):
+            return {
+                "thumbnail_url": str(thumbnail_url),
+                "page_url": f"https://commons.wikimedia.org/wiki/{urllib.parse.quote(title.replace(' ', '_'))}",
+                "source": "commons-image-search",
+            }
+    return None
 
 
 def wikidata_mma_image_rows(limit: int | None = None) -> list[dict[str, str]]:
@@ -361,10 +575,34 @@ SELECT ?person ?personLabel ?image WHERE {{
     return rows
 
 
-def commons_file_url(url: str) -> str:
-    url = url.replace("http://commons.wikimedia.org/", "https://commons.wikimedia.org/")
-    separator = "&" if "?" in url else "?"
-    return f"{url}{separator}width=160"
+def commons_file_url(value: str) -> str:
+    if value.startswith(("http://", "https://")):
+        url = value.replace("http://commons.wikimedia.org/", "https://commons.wikimedia.org/")
+        separator = "&" if "?" in url else "?"
+        return f"{url}{separator}width=160"
+
+    filename = value.removeprefix("File:").replace(" ", "_")
+    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{urllib.parse.quote(filename)}?width=160"
+
+
+def normalize_person_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def name_matches_label(name: str, label: str) -> bool:
+    normalized_name = normalize_person_name(name)
+    normalized_label = normalize_person_name(label)
+    if normalized_name == normalized_label:
+        return True
+    name_parts = normalized_name.split()
+    label_parts = normalized_label.split()
+    return bool(name_parts) and all(part in label_parts for part in name_parts)
+
+
+def commons_result_matches_name(name: str, title: str, thumbnail_url: str) -> bool:
+    haystack = normalize_person_name(f"{title} {urllib.parse.unquote(thumbnail_url)}")
+    name_parts = normalize_person_name(name).split()
+    return bool(name_parts) and all(part in haystack for part in name_parts)
 
 
 def media_url_for_name(media: FighterMedia | None, name: str) -> str:

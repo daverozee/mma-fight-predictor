@@ -1,11 +1,20 @@
+import json
 from pathlib import Path
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
+import app.media as media_module
 from app.current_fights import import_current_fight_results
 from app.database import Base
-from app.media import image_url_health, import_media_overrides
+from app.media import (
+    ImageHealth,
+    commons_file_url,
+    image_url_health,
+    import_media_overrides,
+    public_fighter_thumbnail,
+    verify_media_urls,
+)
 from app.models import FightResult, FighterMedia, FighterProfile
 
 
@@ -96,6 +105,83 @@ def test_image_url_health_rejects_tiny_or_non_image_payloads() -> None:
     assert html.reason == "not_image"
 
 
+def test_commons_file_url_builds_thumbnail_from_wikidata_filename() -> None:
+    url = commons_file_url("Justin Gaethje UFC 291.jpg")
+
+    assert url == "https://commons.wikimedia.org/wiki/Special:FilePath/Justin_Gaethje_UFC_291.jpg?width=160"
+
+
+def test_public_fighter_thumbnail_uses_wikidata_entity_image_when_summary_misses() -> None:
+    thumbnail = public_fighter_thumbnail(
+        "Justin Gaethje",
+        opener=FakePublicImageResponses.open,
+    )
+
+    assert thumbnail == {
+        "thumbnail_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Justin_Gaethje.jpg?width=160",
+        "page_url": "https://en.wikipedia.org/wiki/Justin_Gaethje",
+        "source": "wikidata-entity-image",
+    }
+
+
+def test_verify_media_urls_ignores_transient_fetch_failures(monkeypatch) -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    monkeypatch.setattr(
+        media_module,
+        "image_url_health",
+        lambda url: ImageHealth(valid=False, reason="fetch_failed"),
+    )
+
+    with Session() as db:
+        db.add(
+            FighterMedia(
+                fighter_name="Sample Fighter",
+                thumbnail_url="https://example.com/sample.jpg",
+                source="wikidata-commons",
+                status="found",
+            )
+        )
+        db.commit()
+
+        result = verify_media_urls(db, limit=1)
+        media = db.scalar(select(FighterMedia).where(FighterMedia.fighter_name == "Sample Fighter"))
+
+    assert result == {"checked": 1, "valid": 0, "broken": 0}
+    assert media.status == "found"
+
+
+def test_verify_media_urls_recovers_valid_broken_media(monkeypatch) -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    monkeypatch.setattr(
+        media_module,
+        "image_url_health",
+        lambda url: ImageHealth(valid=True, width=160, height=160),
+    )
+
+    with Session() as db:
+        db.add(
+            FighterMedia(
+                fighter_name="Sample Fighter",
+                thumbnail_url="https://example.com/sample.jpg",
+                source="wikidata-commons",
+                status="broken",
+            )
+        )
+        db.commit()
+
+        result = verify_media_urls(db, limit=1)
+        media = db.scalar(select(FighterMedia).where(FighterMedia.fighter_name == "Sample Fighter"))
+
+    assert result == {"checked": 1, "valid": 1, "broken": 0}
+    assert media.status == "found"
+
+
 def profile(name: str) -> FighterProfile:
     return FighterProfile(
         name=name,
@@ -150,3 +236,61 @@ def png_header(width: int, height: int) -> bytes:
         + height.to_bytes(4, "big")
         + b"\x08\x02\x00\x00\x00"
     )
+
+
+class FakePublicImageResponses:
+    @staticmethod
+    def open(request, timeout: int):
+        url = request.full_url
+        if "api/rest_v1/page/summary" in url:
+            return FakeJsonResponse({"extract": "No image here."})
+        if "wbsearchentities" in url:
+            return FakeJsonResponse(
+                {
+                    "search": [
+                        {
+                            "id": "Q1",
+                            "label": "Justin Gaethje",
+                            "description": "American mixed martial artist",
+                        }
+                    ]
+                }
+            )
+        if "wbgetentities" in url:
+            return FakeJsonResponse(
+                {
+                    "entities": {
+                        "Q1": {
+                            "claims": {
+                                "P18": [
+                                    {
+                                        "mainsnak": {
+                                            "datavalue": {
+                                                "value": "Justin Gaethje.jpg",
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "sitelinks": {"enwiki": {"title": "Justin Gaethje"}},
+                        }
+                    }
+                }
+            )
+        return FakeJsonResponse({})
+
+
+class FakeJsonResponse:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+        self.headers = {"Content-Type": "application/json"}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        body = json.dumps(self.payload).encode("utf-8")
+        return body if size < 0 else body[:size]

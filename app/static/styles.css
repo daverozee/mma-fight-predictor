@@ -1618,6 +1618,71 @@ legend {
   gap: 16px;
 }
 
+.fighter-coverage-loading {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.fighter-coverage-loading[hidden],
+.fighter-article-grid[hidden],
+.fighter-coverage-empty[hidden] {
+  display: none;
+}
+
+.fighter-coverage-loading span {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.coverage-skeleton-card {
+  min-height: 188px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent),
+    linear-gradient(#edf2ef 0 0) 18px 20px / 96px 12px no-repeat,
+    linear-gradient(#e2e9e5 0 0) 18px 58px / 72% 18px no-repeat,
+    linear-gradient(#edf2ef 0 0) 18px 92px / 84% 12px no-repeat,
+    linear-gradient(#edf2ef 0 0) 18px 116px / 62% 12px no-repeat,
+    #fff;
+  background-size:
+    140px 100%,
+    96px 12px,
+    72% 18px,
+    84% 12px,
+    62% 12px,
+    auto;
+  animation: coverage-loading-sweep 1.25s ease-in-out infinite;
+}
+
+@keyframes coverage-loading-sweep {
+  0% {
+    background-position:
+      -160px 0,
+      18px 20px,
+      18px 58px,
+      18px 92px,
+      18px 116px,
+      0 0;
+  }
+  100% {
+    background-position:
+      calc(100% + 160px) 0,
+      18px 20px,
+      18px 58px,
+      18px 92px,
+      18px 116px,
+      0 0;
+  }
+}
+
 .fighter-article-card {
   min-height: 188px;
   display: grid;
@@ -2098,6 +2163,7 @@ legend {
   .fighter-detail-head,
   .fighter-detail-grid,
   .fighter-article-grid,
+  .fighter-coverage-loading,
   .fighter-row,
   .ranking-source-grid,
   .ranking-source-card,

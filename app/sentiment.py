@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote_plus, urlencode, urlparse
 import json
 import re
 import urllib.request
@@ -138,6 +138,38 @@ def search_fighter_article_links(
         "status": "ready" if articles else "empty",
         "articles": articles,
     }
+
+
+def fallback_fighter_media_links(fighter_name: str, limit: int = 3) -> list[dict[str, str]]:
+    encoded = quote_plus(f'"{fighter_name}" MMA')
+    name_only = quote_plus(fighter_name)
+    candidates = [
+        {
+            "title": f"{fighter_name} MMA news",
+            "url": f"https://news.google.com/search?q={encoded}",
+            "source": "Google News",
+            "snippet": "Current news coverage, fight-week updates, interviews, and recaps.",
+        },
+        {
+            "title": f"{fighter_name} coverage on MMA Fighting",
+            "url": f"https://www.mmafighting.com/search?q={encoded}",
+            "source": "MMA Fighting",
+            "snippet": "Editorial coverage, event previews, post-fight analysis, and media notes.",
+        },
+        {
+            "title": f"{fighter_name} search on Sherdog",
+            "url": f"https://www.sherdog.com/search?SearchTxt={name_only}",
+            "source": "Sherdog",
+            "snippet": "Fighter news, bout records, interviews, and profile references.",
+        },
+        {
+            "title": f"{fighter_name} MMA headlines",
+            "url": f"https://www.google.com/search?q={encoded}+fighter+news",
+            "source": "Google Search",
+            "snippet": "Broad public search results for recent fighter coverage.",
+        },
+    ]
+    return candidates[: max(0, limit)]
 
 
 def article_links_from_items(items: list[dict[str, object]], limit: int = 3) -> list[dict[str, str]]:

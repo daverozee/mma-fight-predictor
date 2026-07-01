@@ -30,7 +30,11 @@ from app.ml.predictor import FightPredictor
 from app.models import User
 from app.odds_sites import load_odds_sites
 from app.rankings import load_rankings
-from app.sentiment import sample_matchup_sentiment, search_fighter_article_links
+from app.sentiment import (
+    fallback_fighter_media_links,
+    sample_matchup_sentiment,
+    search_fighter_article_links,
+)
 
 settings = get_settings()
 
@@ -211,7 +215,6 @@ def fighter_detail_page(
             "fighter": fighter,
             "profile_context": fighter_profile_context(fighter, feature_map),
             "thumbnail_url": media_urls[fighter.name],
-            "article_links": fighter_article_links(fighter.name),
             "career_curve": fighter_career_curve(db, fighter),
             "bout_history": fighter_bout_history(db, fighter),
             "fight_result_count": fight_edges,
@@ -467,6 +470,14 @@ def api_fighter_defeat_tree(
     }
 
 
+@app.get("/api/v1/fighters/{fighter_id}/articles")
+def api_fighter_articles(fighter_id: int, db: Session = Depends(get_db)) -> dict[str, object]:
+    fighter = get_fighter(db, fighter_id)
+    if fighter is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
+    return fighter_article_links(fighter.name)
+
+
 @app.post("/api/v1/predict")
 def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[str, object]:
     fighter_a_id = payload.get("fighter_a_id")
@@ -525,12 +536,21 @@ def sentiment_for_matchup(
 
 
 def fighter_article_links(fighter_name: str) -> dict[str, object]:
-    return search_fighter_article_links(
+    result = search_fighter_article_links(
         fighter_name,
         api_key=settings.google_search_api_key,
         engine_id=settings.google_search_engine_id,
         limit=settings.fighter_article_results,
     )
+    if result.get("available"):
+        return result
+    fallback_articles = fallback_fighter_media_links(fighter_name, settings.fighter_article_results)
+    return {
+        "available": bool(fallback_articles),
+        "status": "fallback",
+        "source_label": "Coverage search",
+        "articles": fallback_articles,
+    }
 
 
 def render_predict_page(

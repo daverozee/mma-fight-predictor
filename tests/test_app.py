@@ -169,7 +169,14 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert "tree-expand-all" in response.text
         assert "/tree?" not in response.text
         assert "Recent coverage" in response.text
-        assert "Recent coverage is not available right now." in response.text
+        assert "Loading recent coverage..." in response.text
+        assert "/api/v1/fighters/" in response.text
+
+        response = client.get(f"/api/v1/fighters/{fighters[0]['id']}/articles")
+        assert response.status_code == 200
+        article_payload = response.json()
+        assert article_payload["available"] is True
+        assert article_payload["articles"]
 
         response = client.post(
             "/predict/from-profiles",

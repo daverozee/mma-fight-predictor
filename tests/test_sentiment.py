@@ -2,6 +2,7 @@ from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.sentiment import (
     article_links_from_items,
+    fallback_fighter_media_links,
     sample_matchup_sentiment,
     search_fighter_article_links,
     sentiment_score,
@@ -92,6 +93,15 @@ def test_article_links_from_items_deduplicates_urls() -> None:
     )
 
     assert [article["title"] for article in articles] == ["One", "Two"]
+
+
+def test_fallback_fighter_media_links_builds_search_destinations() -> None:
+    links = fallback_fighter_media_links("Jon Jones", limit=3)
+
+    assert len(links) == 3
+    assert links[0]["source"] == "Google News"
+    assert "Jon+Jones" in links[0]["url"]
+    assert all(link["title"] and link["url"] for link in links)
 
 
 def test_predictor_applies_sentiment_as_bounded_nudge() -> None:

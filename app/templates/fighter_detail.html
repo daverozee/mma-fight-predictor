@@ -173,27 +173,22 @@
   </div>
 </section>
 <section class="band">
-  <div class="fighter-coverage-section">
+  <div class="fighter-coverage-section" id="fighter-coverage" data-articles-url="/api/v1/fighters/{{ fighter.id }}/articles">
     <div>
       <p class="eyebrow">Recent coverage</p>
-      <h2>Top search links</h2>
+      <h2>Media links</h2>
     </div>
-    {% if article_links.available %}
-      <div class="fighter-article-grid">
-        {% for article in article_links.articles %}
-          <a class="fighter-article-card" href="{{ article.url }}" target="_blank" rel="noopener noreferrer">
-            <span>{{ article.source }}</span>
-            <strong>{{ article.title }}</strong>
-            {% if article.snippet %}<p>{{ article.snippet }}</p>{% endif %}
-          </a>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="empty-state inline">
-        <h2>Recent coverage is not available right now.</h2>
-        <p>Profile links will appear here when fresh public search results are available.</p>
-      </div>
-    {% endif %}
+    <div class="fighter-coverage-loading" role="status" aria-live="polite">
+      <div class="coverage-skeleton-card"></div>
+      <div class="coverage-skeleton-card"></div>
+      <div class="coverage-skeleton-card"></div>
+      <span>Loading recent coverage...</span>
+    </div>
+    <div class="fighter-article-grid" hidden></div>
+    <div class="empty-state inline fighter-coverage-empty" hidden>
+      <h2>Coverage links are temporarily unavailable.</h2>
+      <p>Media links will appear here when recent public coverage can be reached.</p>
+    </div>
   </div>
 </section>
 <section class="band">
@@ -216,6 +211,46 @@
   {% endif %}
 </section>
 <script>
+  const coverageSection = document.getElementById("fighter-coverage");
+  if (coverageSection) {
+    const loading = coverageSection.querySelector(".fighter-coverage-loading");
+    const grid = coverageSection.querySelector(".fighter-article-grid");
+    const empty = coverageSection.querySelector(".fighter-coverage-empty");
+
+    function articleCard(article) {
+      const card = document.createElement("a");
+      const source = document.createElement("span");
+      const title = document.createElement("strong");
+      const snippet = document.createElement("p");
+      card.className = "fighter-article-card";
+      card.href = article.url;
+      card.target = "_blank";
+      card.rel = "noopener noreferrer";
+      source.textContent = article.source || "Coverage";
+      title.textContent = article.title || "Media link";
+      snippet.textContent = article.snippet || "";
+      card.append(source, title, snippet);
+      return card;
+    }
+
+    fetch(coverageSection.dataset.articlesUrl, { headers: { "Accept": "application/json" } })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((payload) => {
+        loading.hidden = true;
+        const articles = payload.articles || [];
+        if (!articles.length) {
+          empty.hidden = false;
+          return;
+        }
+        articles.forEach((article) => grid.appendChild(articleCard(article)));
+        grid.hidden = false;
+      })
+      .catch(() => {
+        loading.hidden = true;
+        empty.hidden = false;
+      });
+  }
+
   document.querySelectorAll(".tree-fighter-link[href]").forEach((link) => {
     link.addEventListener("click", (event) => event.stopPropagation());
   });

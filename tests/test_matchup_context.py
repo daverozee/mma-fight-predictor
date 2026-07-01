@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
 from app.matchup_context import career_arc_context
+from app.matchup_context import fighter_career_arc
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import FightResult, FighterProfile
@@ -151,6 +152,89 @@ def test_career_arc_context_favors_active_success_over_old_peak() -> None:
 
     assert result["winner"] == "Current Form"
     assert result["insights"][0]["label"] == "Career arc"
+
+
+def test_king_green_career_arc_uses_recent_curated_results() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    with Session() as db:
+        db.add(profile("King Green"))
+        db.add_all(
+            [
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Tony Ferguson",
+                    event_name="UFC 291",
+                    bout_date="2023-07-29",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Grant Dawson",
+                    event_name="UFC Fight Night 229",
+                    bout_date="2023-10-07",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="Jalin Turner",
+                    loser_name="King Green",
+                    event_name="UFC on ESPN 52",
+                    bout_date="2023-12-02",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Jim Miller",
+                    event_name="UFC 300",
+                    bout_date="2024-04-13",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="Paddy Pimblett",
+                    loser_name="King Green",
+                    event_name="UFC 304",
+                    bout_date="2024-07-27",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="Mauricio Ruffy",
+                    loser_name="King Green",
+                    event_name="UFC 313",
+                    bout_date="2025-03-08",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Lance Gibson Jr.",
+                    event_name="UFC on ESPN 73",
+                    bout_date="2025-12-13",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Daniel Zellhuber",
+                    event_name="UFC Fight Night 268",
+                    bout_date="2026-02-28",
+                    source="test",
+                ),
+                FightResult(
+                    winner_name="King Green",
+                    loser_name="Jeremy Stephens",
+                    event_name="UFC 328",
+                    bout_date="2026-05-09",
+                    source="test",
+                ),
+            ]
+        )
+        db.commit()
+
+        arc = fighter_career_arc(db, "King Green", today=date(2026, 7, 1))
+
+    assert arc["recent_record"] == "6-3"
+    assert arc["last_fight_years_ago"] == 0.1
+    assert arc["sample_size"] == 9
 
 
 def even_features() -> dict[str, float]:

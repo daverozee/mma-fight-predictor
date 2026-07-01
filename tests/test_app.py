@@ -257,3 +257,13 @@ def test_public_api_lists_fighters_and_predicts() -> None:
         result = response.json()
         assert result["prediction"]["winner"]
         assert 0 <= result["prediction"]["probability_a"] <= 1
+        assert result["agent"]["version"] == "prediction-agent-v1"
+
+        response = client.post(
+            "/api/v1/agents/predict",
+            json={"fighter_a_id": fighter_a, "fighter_b_id": fighter_b},
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["agent"]["tool_runs"]
+        assert result["agent"]["wager_readiness"]["status"] in {"research_only", "review_only"}

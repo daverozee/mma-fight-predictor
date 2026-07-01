@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.agents.prediction_agent import PredictionAgent
 from app.auth import authenticate_user, create_user
 from app.bout_history import fighter_bout_history
 from app.career_curve import fighter_career_curve
@@ -19,12 +20,10 @@ from app.fighters import (
     fighter_profile_context,
     features_for_fighter,
     get_fighter,
-    profile_to_features,
     search_fighters,
 )
 from app.fight_tree import build_defeat_tree, fight_result_count
 from app.media import avatar_svg, fallback_thumbnail_url, fighter_thumbnail_urls
-from app.matchup_context import career_arc_context
 from app.ml.features import FighterFeatures
 from app.ml.predictor import FightPredictor
 from app.models import User
@@ -52,6 +51,7 @@ BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 predictor = FightPredictor()
+prediction_agent = PredictionAgent(predictor)
 PROFILE_TREE_DEPTH = 2
 PROFILE_TREE_MAX_CHILDREN = 10
 
@@ -378,14 +378,15 @@ def predict_from_profiles(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    fighter_a = profile_to_features(profile_a, features_for_fighter(db, profile_a.name))
-    fighter_b = profile_to_features(profile_b, features_for_fighter(db, profile_b.name))
-    result = predictor.predict(
-        fighter_a,
-        fighter_b,
-        sentiment=sentiment_for_matchup(include_sentiment, fighter_a.name, fighter_b.name),
-        career_arc=career_arc_context(db, profile_a, profile_b),
+    analysis = prediction_agent.analyze(
+        db,
+        profile_a,
+        profile_b,
+        include_sentiment=include_sentiment,
     )
+    fighter_a = analysis["fighter_a"]
+    fighter_b = analysis["fighter_b"]
+    result = analysis["prediction"]
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return templates.TemplateResponse(
         request,
@@ -397,6 +398,7 @@ def predict_from_profiles(
             "fighter_a_thumbnail": media_urls[profile_a.name],
             "fighter_b_thumbnail": media_urls[profile_b.name],
             "result": result,
+            "agent": analysis["agent"],
         },
     )
 
@@ -423,6 +425,7 @@ def api_meta(db: Session = Depends(get_db)) -> dict[str, object]:
             "fighter_detail": "/api/v1/fighters/{fighter_id}",
             "fighter_defeat_tree": "/api/v1/fighters/{fighter_id}/defeat-tree",
             "prediction": "/api/v1/predict",
+            "agent_prediction": "/api/v1/agents/predict",
         },
     }
 
@@ -480,6 +483,11 @@ def api_fighter_articles(fighter_id: int, db: Session = Depends(get_db)) -> dict
 
 @app.post("/api/v1/predict")
 def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[str, object]:
+    return api_agent_predict(payload, db)
+
+
+@app.post("/api/v1/agents/predict")
+def api_agent_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[str, object]:
     fighter_a_id = payload.get("fighter_a_id")
     fighter_b_id = payload.get("fighter_b_id")
     if fighter_a_id is None or fighter_b_id is None:
@@ -498,23 +506,19 @@ def api_predict(payload: dict[str, int], db: Session = Depends(get_db)) -> dict[
     if profile_a is None or profile_b is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fighter not found")
 
-    fighter_a = profile_to_features(profile_a, features_for_fighter(db, profile_a.name))
-    fighter_b = profile_to_features(profile_b, features_for_fighter(db, profile_b.name))
-    result = predictor.predict(
-        fighter_a,
-        fighter_b,
-        sentiment=sentiment_for_matchup(
-            bool(payload.get("include_sentiment")),
-            fighter_a.name,
-            fighter_b.name,
-        ),
-        career_arc=career_arc_context(db, profile_a, profile_b),
+    analysis = prediction_agent.analyze(
+        db,
+        profile_a,
+        profile_b,
+        include_sentiment=bool(payload.get("include_sentiment")),
     )
+    result = analysis["prediction"]
     media_urls = fighter_thumbnail_urls(db, [profile_a, profile_b])
     return {
         "fighter_a": serialize_fighter(profile_a, media_urls[profile_a.name]),
         "fighter_b": serialize_fighter(profile_b, media_urls[profile_b.name]),
         "prediction": result,
+        "agent": analysis["agent"],
         "note": "Some fighters use estimated values where complete public statistics are unavailable.",
     }
 

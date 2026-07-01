@@ -75,6 +75,23 @@
           {% endif %}
         </div>
       {% endif %}
+      {% if agent %}
+        <div class="sentiment-panel">
+          <h2>AI analyst checks</h2>
+          <p>{{ agent.data_quality.summary }}</p>
+          <div class="sentiment-grid">
+            {% for run in agent.tool_runs %}
+              <article class="sentiment-card">
+                <span>{{ run.status | title }}</span>
+                <strong>{{ run.name.replace("_", " ").replace(" tool", "") | title }}</strong>
+                <p>{{ run.summary }}</p>
+              </article>
+            {% endfor %}
+          </div>
+          <h2>Betting workflow readiness</h2>
+          <p>{{ agent.wager_readiness.summary }}</p>
+        </div>
+      {% endif %}
     </div>
     <div>
       <h2>Profile comparison</h2>

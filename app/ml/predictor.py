@@ -26,6 +26,9 @@ class FightPredictor:
             if not self.model_path.exists():
                 train_model(self.data_path, self.model_path)
             self._model = joblib.load(self.model_path)
+            if not model_supports_features(self._model):
+                train_model(self.data_path, self.model_path)
+                self._model = joblib.load(self.model_path)
         return self._model
 
     def predict(
@@ -301,6 +304,62 @@ def matchup_insights(
                 "SApM",
             ),
         ),
+        "elo_diff": (
+            75,
+            lambda value: higher_is_better(
+                value,
+                fighter_a.name,
+                fighter_b.name,
+                "Elo rating",
+                "higher rolling fight-history rating",
+                "pts",
+            ),
+        ),
+        "opponent_elo_avg_diff": (
+            50,
+            lambda value: higher_is_better(
+                value,
+                fighter_a.name,
+                fighter_b.name,
+                "Opponent strength",
+                "stronger average opposition",
+                "pts",
+            ),
+        ),
+        "recent_win_rate_diff": (
+            0.25,
+            lambda value: rate_insight(value, fighter_a.name, fighter_b.name, "Recent form"),
+        ),
+        "streak_diff": (
+            3,
+            lambda value: higher_is_better(
+                value,
+                fighter_a.name,
+                fighter_b.name,
+                "Current streak",
+                "better recent streak",
+                "bouts",
+            ),
+        ),
+        "layoff_days_diff": (
+            365,
+            lambda value: higher_is_better(
+                value,
+                fighter_a.name,
+                fighter_b.name,
+                "Activity",
+                "less time since last fight",
+                "days",
+            ),
+        ),
+        "finish_rate_diff": (
+            0.2,
+            lambda value: rate_insight(value, fighter_a.name, fighter_b.name, "Finish rate"),
+        ),
+        "quality_win_rate_diff": (
+            0.2,
+            lambda value: rate_insight(value, fighter_a.name, fighter_b.name, "Quality wins"),
+        ),
     }
     ranked = sorted(
         (
@@ -505,3 +564,9 @@ def edge_label(
     if higher_is_edge:
         return fighter_a_name if value_a > value_b else fighter_b_name
     return fighter_a_name if value_a < value_b else fighter_b_name
+
+
+def model_supports_features(model: Pipeline) -> bool:
+    classifier = model.steps[-1][1] if getattr(model, "steps", None) else model
+    expected = getattr(classifier, "n_features_in_", None)
+    return expected is None or int(expected) == len(FEATURE_COLUMNS)

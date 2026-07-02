@@ -17,6 +17,10 @@ def test_normalize_completed_fight_creates_winner_loser_edge() -> None:
             "event": {"name": "UFC Test Night", "date": "2026-06-14T00:00:00Z"},
             "result_method": "Decision",
             "result_method_detail": "Unanimous",
+            "weight_class": {"name": "Lightweight"},
+            "scheduled_rounds": 3,
+            "finish_round": 3,
+            "finish_time": "5:00",
         }
     )
 
@@ -26,6 +30,11 @@ def test_normalize_completed_fight_creates_winner_loser_edge() -> None:
         "event_name": "UFC Test Night",
         "bout_date": "2026-06-14",
         "method": "Decision - Unanimous",
+        "promotion": None,
+        "weight_class": "Lightweight",
+        "scheduled_rounds": 3,
+        "finish_round": 3,
+        "finish_time": "5:00",
         "source_url": "https://api.balldontlie.io/mma/v1/fights/44",
     }
 
@@ -61,6 +70,8 @@ def test_import_fight_edges_deduplicates_existing_bouts() -> None:
             "winner": {"id": 2, "name": "Justin Gaethje"},
             "event": {"name": "UFC Test Night", "date": "2026-06-14"},
             "result_method": "Decision",
+            "weight_class": {"name": "Lightweight"},
+            "finish_round": 3,
         }
     ]
 
@@ -79,6 +90,8 @@ def test_import_fight_edges_deduplicates_existing_bouts() -> None:
     assert result is not None
     assert result.winner_profile_id is not None
     assert result.loser_profile_id is not None
+    assert result.weight_class == "Lightweight"
+    assert result.finish_round == 3
 
 
 def profile(name: str) -> FighterProfile:

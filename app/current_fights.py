@@ -49,6 +49,11 @@ def import_current_fight_results(
                     event_name=event_name,
                     bout_date=bout_date,
                     method=clean(row.get("method")),
+                    promotion=clean(row.get("promotion")),
+                    weight_class=clean(row.get("weight_class")),
+                    scheduled_rounds=clean_int(row.get("scheduled_rounds")),
+                    finish_round=clean_int(row.get("finish_round")),
+                    finish_time=clean(row.get("finish_time")),
                     source=source,
                     source_url=clean(row.get("source_url")),
                 )
@@ -61,3 +66,13 @@ def import_current_fight_results(
 def clean(value: str | None) -> str | None:
     value = (value or "").strip()
     return value or None
+
+
+def clean_int(value: str | None) -> int | None:
+    text = clean(value)
+    if text is None:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None

@@ -116,16 +116,25 @@ ruff check .
 ```
 
 Train the predictor from the imported bout-history database and let the trainer select the
-best-performing algorithm:
+best-performing algorithm. Training rows are built from pre-fight snapshots, including
+rolling Elo, recent form, layoff, finish-rate, and opponent-strength features:
 
 ```powershell
 python scripts/train_model_from_db.py
+```
+
+Run an honest chronological backtest that trains on earlier fights and evaluates later
+fights without fight-level leakage:
+
+```powershell
+python scripts/backtest_model.py
 ```
 
 With Docker:
 
 ```powershell
 docker compose exec -T web python scripts/train_model_from_db.py
+docker compose exec -T web python scripts/backtest_model.py
 docker compose restart web
 ```
 

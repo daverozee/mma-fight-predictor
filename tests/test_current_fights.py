@@ -23,8 +23,8 @@ def test_import_current_fight_results_upserts_missing_recent_bouts(tmp_path: Pat
     csv_path.write_text(
         "\n".join(
             [
-                "winner_name,loser_name,event_name,bout_date,method,source_url",
-                "Justin Gaethje,Ilia Topuria,UFC Freedom 250,2026-06-14,TKO,https://example.com",
+                "winner_name,loser_name,event_name,bout_date,method,promotion,weight_class,scheduled_rounds,finish_round,finish_time,source_url",
+                "Justin Gaethje,Ilia Topuria,UFC Freedom 250,2026-06-14,TKO,UFC,Lightweight,5,2,3:45,https://example.com",
             ]
         ),
         encoding="utf-8",
@@ -50,6 +50,11 @@ def test_import_current_fight_results_upserts_missing_recent_bouts(tmp_path: Pat
     assert imported_again == 0
     assert result is not None
     assert result.bout_date == "2026-06-14"
+    assert result.promotion == "UFC"
+    assert result.weight_class == "Lightweight"
+    assert result.scheduled_rounds == 5
+    assert result.finish_round == 2
+    assert result.finish_time == "3:45"
 
 
 def test_import_media_overrides_replaces_bad_thumbnail(tmp_path: Path) -> None:

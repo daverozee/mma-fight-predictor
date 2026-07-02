@@ -40,16 +40,49 @@ def init_db() -> None:
     from app import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
-    ensure_sqlite_schema()
+    ensure_runtime_schema()
 
 
-def ensure_sqlite_schema() -> None:
-    if not database_url.startswith("sqlite"):
-        return
+def ensure_runtime_schema() -> None:
     with engine.begin() as connection:
-        columns = {
-            row["name"]
-            for row in connection.execute(text("PRAGMA table_info(fighter_profiles)")).mappings()
-        }
-        if "instagram_url" not in columns:
-            connection.execute(text("ALTER TABLE fighter_profiles ADD COLUMN instagram_url TEXT"))
+        if database_url.startswith("sqlite"):
+            ensure_sqlite_schema(connection)
+        elif connection.dialect.name == "postgresql":
+            ensure_postgres_schema(connection)
+
+
+def ensure_sqlite_schema(connection) -> None:
+    columns = {
+        row["name"]
+        for row in connection.execute(text("PRAGMA table_info(fighter_profiles)")).mappings()
+    }
+    if "instagram_url" not in columns:
+        connection.execute(text("ALTER TABLE fighter_profiles ADD COLUMN instagram_url TEXT"))
+    fight_columns = {
+        row["name"]
+        for row in connection.execute(text("PRAGMA table_info(fight_results)")).mappings()
+    }
+    for column_name, column_type in fight_result_runtime_columns().items():
+        if column_name not in fight_columns:
+            connection.execute(
+                text(f"ALTER TABLE fight_results ADD COLUMN {column_name} {column_type}")
+            )
+
+
+def ensure_postgres_schema(connection) -> None:
+    connection.execute(text("ALTER TABLE fighter_profiles ADD COLUMN IF NOT EXISTS instagram_url TEXT"))
+    for column_name, column_type in fight_result_runtime_columns(postgres=True).items():
+        connection.execute(
+            text(f"ALTER TABLE fight_results ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+        )
+
+
+def fight_result_runtime_columns(postgres: bool = False) -> dict[str, str]:
+    integer_type = "INTEGER"
+    return {
+        "promotion": "VARCHAR(120)" if postgres else "TEXT",
+        "weight_class": "VARCHAR(80)" if postgres else "TEXT",
+        "scheduled_rounds": integer_type,
+        "finish_round": integer_type,
+        "finish_time": "VARCHAR(20)" if postgres else "TEXT",
+    }

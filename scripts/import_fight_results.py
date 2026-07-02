@@ -35,6 +35,11 @@ def main() -> None:
     parser.add_argument("--event-column", default="event_name")
     parser.add_argument("--date-column", default="bout_date")
     parser.add_argument("--method-column", default="method")
+    parser.add_argument("--promotion-column", default="promotion")
+    parser.add_argument("--weight-class-column", default="weight_class")
+    parser.add_argument("--scheduled-rounds-column", default="scheduled_rounds")
+    parser.add_argument("--finish-round-column", default="finish_round")
+    parser.add_argument("--finish-time-column", default="finish_time")
     parser.add_argument(
         "--events-csv",
         default=None,
@@ -82,6 +87,11 @@ def import_fight_results_from_args(
                 event_name=edge["event_name"],
                 bout_date=edge["bout_date"],
                 method=edge["method"],
+                promotion=edge["promotion"],
+                weight_class=edge["weight_class"],
+                scheduled_rounds=edge["scheduled_rounds"],
+                finish_round=edge["finish_round"],
+                finish_time=edge["finish_time"],
                 source=args.source,
                 source_url=edge["source_url"] or args.source_url,
             )
@@ -94,7 +104,7 @@ def import_fight_results_from_args(
 
 
 def existing_result_query(
-    edge: dict[str, str | None],
+    edge: dict[str, str | int | None],
     allow_source_duplicates: bool,
     source: str,
 ):
@@ -113,7 +123,7 @@ def normalize_edge(
     row: dict[str, str],
     args: argparse.Namespace,
     events: dict[str, dict[str, str | None]],
-) -> dict[str, str | None] | None:
+) -> dict[str, str | int | None] | None:
     if args.format == "ufcstats-event-fight-stats":
         return normalize_ufcstats_event_fight_stats(row, events)
 
@@ -128,6 +138,11 @@ def normalize_edge(
         "event_name": blank_to_none(row.get(args.event_column)),
         "bout_date": blank_to_none(row.get(args.date_column)),
         "method": blank_to_none(row.get(args.method_column)),
+        "promotion": blank_to_none(row.get(args.promotion_column)),
+        "weight_class": blank_to_none(row.get(args.weight_class_column)),
+        "scheduled_rounds": blank_to_int(row.get(args.scheduled_rounds_column)),
+        "finish_round": blank_to_int(row.get(args.finish_round_column)),
+        "finish_time": blank_to_none(row.get(args.finish_time_column)),
         "source_url": None,
     }
 
@@ -135,7 +150,7 @@ def normalize_edge(
 def normalize_ufcstats_event_fight_stats(
     row: dict[str, str],
     events: dict[str, dict[str, str | None]],
-) -> dict[str, str | None] | None:
+) -> dict[str, str | int | None] | None:
     result = blank_to_none(row.get("result"))
     if result in {None, "d", "nc"}:
         return None
@@ -163,6 +178,11 @@ def normalize_ufcstats_event_fight_stats(
         "event_name": event.get("event_name"),
         "bout_date": event.get("event_date"),
         "method": None,
+        "promotion": blank_to_none(row.get("promotion")),
+        "weight_class": blank_to_none(row.get("weight_class")),
+        "scheduled_rounds": blank_to_int(row.get("scheduled_rounds")),
+        "finish_round": blank_to_int(row.get("finish_round") or row.get("round")),
+        "finish_time": blank_to_none(row.get("finish_time") or row.get("time")),
         "source_url": blank_to_none(row.get("fights_url")),
     }
 
@@ -195,6 +215,16 @@ def open_text(location: str):
 def blank_to_none(value: str | None) -> str | None:
     value = (value or "").strip()
     return value or None
+
+
+def blank_to_int(value: str | None) -> int | None:
+    text = blank_to_none(value)
+    if text is None:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
 
 
 if __name__ == "__main__":

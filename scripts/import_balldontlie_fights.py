@@ -181,6 +181,11 @@ def import_fight_edges(
                 event_name=edge["event_name"],
                 bout_date=edge["bout_date"],
                 method=edge["method"],
+                promotion=edge["promotion"],
+                weight_class=edge["weight_class"],
+                scheduled_rounds=edge["scheduled_rounds"],
+                finish_round=edge["finish_round"],
+                finish_time=edge["finish_time"],
                 source=source,
                 source_url=edge["source_url"],
             )
@@ -196,7 +201,7 @@ def import_fight_edges(
     )
 
 
-def normalize_fight(fight: dict[str, Any]) -> dict[str, str | None] | None:
+def normalize_fight(fight: dict[str, Any]) -> dict[str, str | int | None] | None:
     status = blank_to_none(fight.get("status"))
     if status is not None and status.lower() != "completed":
         return None
@@ -224,6 +229,13 @@ def normalize_fight(fight: dict[str, Any]) -> dict[str, str | None] | None:
         "event_name": blank_to_none(event.get("name")),
         "bout_date": iso_date(event.get("date")),
         "method": method,
+        "promotion": nested_text(event, "promotion") or nested_text(fight, "promotion"),
+        "weight_class": nested_text(fight, "weight_class"),
+        "scheduled_rounds": integer_value(
+            fight.get("scheduled_rounds") or fight.get("number_of_rounds")
+        ),
+        "finish_round": integer_value(fight.get("finish_round") or fight.get("round")),
+        "finish_time": blank_to_none(fight.get("finish_time") or fight.get("time")),
         "source_url": fight_url(fight),
     }
 
@@ -252,7 +264,7 @@ def method_text(fight: dict[str, Any]) -> str | None:
     return method or detail
 
 
-def existing_result(db: Session, edge: dict[str, str | None]) -> FightResult | None:
+def existing_result(db: Session, edge: dict[str, str | int | None]) -> FightResult | None:
     return db.scalar(
         select(FightResult).where(
             FightResult.winner_name == edge["winner_name"],
@@ -268,6 +280,23 @@ def fight_url(fight: dict[str, Any]) -> str | None:
     if not fight_id:
         return None
     return f"{API_BASE_URL}/fights/{fight_id}"
+
+
+def nested_text(payload: dict[str, Any], key: str) -> str | None:
+    value = payload.get(key)
+    if isinstance(value, dict):
+        return blank_to_none(value.get("name") or value.get("title") or value.get("abbreviation"))
+    return blank_to_none(value)
+
+
+def integer_value(value: Any) -> int | None:
+    text = blank_to_none(value)
+    if text is None:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
 
 
 def iso_date(value: Any) -> str | None:

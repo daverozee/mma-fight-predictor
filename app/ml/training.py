@@ -23,6 +23,15 @@ from app.ml.features import FEATURE_COLUMNS
 
 TARGET_COLUMN = "fighter_a_won"
 RANDOM_STATE = 42
+NEUTRAL_FEATURE_DEFAULTS = {
+    "elo_diff": 0.0,
+    "opponent_elo_avg_diff": 0.0,
+    "recent_win_rate_diff": 0.0,
+    "streak_diff": 0.0,
+    "layoff_days_diff": 0.0,
+    "finish_rate_diff": 0.0,
+    "quality_win_rate_diff": 0.0,
+}
 
 
 @dataclass(frozen=True)
@@ -53,9 +62,15 @@ def train_model_from_frame(
     model_path: str | Path,
     report_path: str | Path | None = None,
 ) -> TrainingResult:
-    missing = set(FEATURE_COLUMNS + [TARGET_COLUMN]) - set(data.columns)
-    if missing:
-        raise ValueError(f"Training data is missing columns: {sorted(missing)}")
+    missing_target = {TARGET_COLUMN} - set(data.columns)
+    if missing_target:
+        raise ValueError(f"Training data is missing columns: {sorted(missing_target)}")
+    missing_features = set(FEATURE_COLUMNS) - set(data.columns)
+    unsupported_missing = missing_features - set(NEUTRAL_FEATURE_DEFAULTS)
+    if unsupported_missing:
+        raise ValueError(f"Training data is missing columns: {sorted(unsupported_missing)}")
+    for column in missing_features:
+        data[column] = NEUTRAL_FEATURE_DEFAULTS[column]
     if data[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Training data must include both wins and losses.")
 

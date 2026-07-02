@@ -159,8 +159,20 @@
               {% else %}
                 {{ bout.event_name }}
               {% endif %}
+              {% if bout.promotion or bout.weight_class %}
+                <small>{{ bout.promotion or "" }}{% if bout.promotion and bout.weight_class %} - {% endif %}{{ bout.weight_class or "" }}</small>
+              {% endif %}
             </span>
-            <span>{{ bout.method }}</span>
+            <span>
+              {{ bout.method }}
+              {% if bout.finish_round or bout.finish_time or bout.scheduled_rounds %}
+                <small>
+                  {% if bout.finish_round %}R{{ bout.finish_round }}{% endif %}
+                  {% if bout.finish_time %} {{ bout.finish_time }}{% endif %}
+                  {% if bout.scheduled_rounds %} / {{ bout.scheduled_rounds }} scheduled{% endif %}
+                </small>
+              {% endif %}
+            </span>
           </div>
         {% endfor %}
       </div>

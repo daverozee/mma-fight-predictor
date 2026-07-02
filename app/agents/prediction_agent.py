@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.fighters import features_for_fighter, profile_to_features
 from app.matchup_context import career_arc_context
 from app.ml.features import FighterFeatures
+from app.ml.fight_history import historical_features_for_fighter
 from app.ml.predictor import FightPredictor, effective_weight_lbs
 from app.models import FighterExternalFeature, FighterProfile
 from app.sentiment import sample_matchup_sentiment
@@ -42,8 +43,12 @@ class PredictionAgent:
         settings = get_settings()
         feature_map_a = features_for_fighter(db, profile_a.name)
         feature_map_b = features_for_fighter(db, profile_b.name)
-        fighter_a = profile_to_features(profile_a, feature_map_a)
-        fighter_b = profile_to_features(profile_b, feature_map_b)
+        fighter_a = profile_to_features(profile_a, feature_map_a).model_copy(
+            update=historical_features_for_fighter(db, profile_a.name)
+        )
+        fighter_b = profile_to_features(profile_b, feature_map_b).model_copy(
+            update=historical_features_for_fighter(db, profile_b.name)
+        )
         tool_runs = [
             AgentToolRun(
                 "fighter_profile_tool",

@@ -115,6 +115,8 @@ def test_card_analyzer_prefers_curated_card_order(tmp_path) -> None:
                 profile("Fighter B"),
                 profile("Fighter C"),
                 profile("Fighter D"),
+                profile("Fighter X"),
+                profile("Fighter Y"),
             ]
         )
         add_odds_event(
@@ -122,6 +124,13 @@ def test_card_analyzer_prefers_curated_card_order(tmp_path) -> None:
             home="Fighter B",
             away="Fighter A",
             commence_time="2026-07-12T02:30:00Z",
+            bookmakers="[]",
+        )
+        add_odds_event(
+            db,
+            home="Fighter X",
+            away="Fighter Y",
+            commence_time="2026-07-19T02:30:00Z",
             bookmakers="[]",
         )
         db.commit()
@@ -134,6 +143,7 @@ def test_card_analyzer_prefers_curated_card_order(tmp_path) -> None:
         )
 
     card = analysis["cards"][0]
+    assert analysis["summary"]["cards"] == 1
     assert card["title"] == "Test Card"
     assert [fight["label"] for fight in card["fights"]] == ["Main Event", "Fight 9"]
     assert card["main_event"]["home_team"] == "Fighter A"

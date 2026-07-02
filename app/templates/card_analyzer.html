@@ -27,7 +27,7 @@
             </div>
             <div class="fight-card-poster-head">
               <div>
-                <p class="eyebrow">{{ card.promotion }} · {{ card.date_label }}</p>
+                <p class="eyebrow">{{ card.promotion }} - {{ card.date_label }}</p>
                 <h2>{{ card.title }}</h2>
                 {% if card.venue or card.location %}
                   <p>{{ card.venue }}{% if card.venue and card.location %}, {% endif %}{{ card.location }}</p>
@@ -46,15 +46,18 @@
                   {% set profile_id = card.main_event[side ~ "_profile_id"] %}
                   {% set thumbnail = card.main_event[side ~ "_thumbnail"] %}
                   {% set record = card.main_event[side ~ "_record"] %}
-                  <article class="main-event-fighter">
-                    {% if thumbnail %}<img src="{{ thumbnail }}" alt="">{% endif %}
+                  <article class="main-event-fighter {{ side }}-corner">
+                    <div class="main-event-image">
+                      {% if thumbnail %}<img src="{{ thumbnail }}" alt="">{% endif %}
+                    </div>
                     <div>
+                      <span>{{ "Red corner" if side == "home" else "Blue corner" }}</span>
                       {% if profile_id %}
                         <a href="/fighters/{{ profile_id }}">{{ fighter_name }}</a>
                       {% else %}
                         <strong>{{ fighter_name }}</strong>
                       {% endif %}
-                      {% if record %}<span>{{ record }} record</span>{% endif %}
+                      {% if record %}<small>{{ record }} record</small>{% endif %}
                     </div>
                   </article>
                 {% endfor %}
@@ -62,7 +65,28 @@
                   <span>Main event</span>
                   <strong>VS</strong>
                   <em>{{ card.main_event.weight_class or "MMA bout" }}</em>
+                  {% if card.main_event.prediction_status == "ready" %}
+                    <div class="main-event-pick">
+                      <span>Projected winner</span>
+                      <strong>{{ card.main_event.prediction.winner }}</strong>
+                      <em>{{ (card.main_event.prediction.confidence * 100) | round(1) }}% confidence</em>
+                    </div>
+                  {% endif %}
+                  {% if card.main_event.odds %}
+                    <div class="main-event-market">
+                      <span>Market average</span>
+                      <strong>{{ card.main_event.odds.fighter_a_display }} / {{ card.main_event.odds.fighter_b_display }}</strong>
+                      <em>{{ card.main_event.odds.bookmaker_count }} books</em>
+                    </div>
+                  {% endif %}
                 </div>
+              </div>
+              <div class="main-event-detail-strip">
+                <span>{{ card.main_event.start_label }}</span>
+                <span>{{ card.main_event.weight_class or "MMA bout" }}</span>
+                {% if card.main_event.prediction_status == "ready" and card.main_event.prediction.insights %}
+                  <span>{{ card.main_event.prediction.insights[0].label }} edge: {{ card.main_event.prediction.insights[0].advantage }}</span>
+                {% endif %}
               </div>
             {% endif %}
           </div>

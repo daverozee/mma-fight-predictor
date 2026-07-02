@@ -2016,30 +2016,45 @@ legend {
 
 .main-event-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190px minmax(0, 1fr);
-  gap: 22px;
-  align-items: center;
+  grid-template-columns: minmax(260px, 1fr) 170px minmax(260px, 1fr);
+  gap: 18px;
+  align-items: stretch;
 }
 
 .main-event-fighter {
-  min-height: 310px;
   display: grid;
-  align-content: end;
+  grid-template-rows: 280px minmax(122px, auto);
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
   background: #161817;
 }
 
-.main-event-fighter img {
-  width: 100%;
-  height: 230px;
-  object-fit: cover;
-  object-position: top center;
-  background: #202523;
+.main-event-fighter.home-corner {
+  grid-column: 1;
 }
 
-.main-event-fighter div {
+.main-event-fighter.away-corner {
+  grid-column: 3;
+}
+
+.main-event-image {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.1), transparent 36%),
+    #202523;
+}
+
+.main-event-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: top center;
+}
+
+.main-event-fighter > div:last-child {
   display: grid;
   gap: 5px;
   padding: 16px;
@@ -2056,16 +2071,31 @@ legend {
   text-transform: uppercase;
 }
 
-.main-event-fighter span {
+.main-event-fighter span,
+.main-event-fighter small {
   color: rgba(255, 255, 255, 0.68);
   font-size: 0.85rem;
   font-weight: 750;
 }
 
+.main-event-fighter > div:last-child > span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
 .main-event-vs {
+  grid-column: 2;
+  grid-row: 1;
   display: grid;
+  align-content: center;
   justify-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 16px 10px;
+  border: 1px solid rgba(246, 211, 78, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
   color: #f6d34e;
   text-align: center;
   text-transform: uppercase;
@@ -2087,6 +2117,44 @@ legend {
   font-size: 0.9rem;
   font-style: normal;
   font-weight: 950;
+}
+
+.main-event-pick,
+.main-event-market {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.main-event-pick strong,
+.main-event-market strong {
+  color: #fff;
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+
+.main-event-pick em,
+.main-event-market em {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.72rem;
+}
+
+.main-event-detail-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.main-event-detail-strip span {
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .card-counts {
@@ -2497,7 +2565,13 @@ legend {
   }
 
   .main-event-vs {
+    grid-column: 1;
     grid-row: 2;
+  }
+
+  .main-event-fighter.home-corner,
+  .main-event-fighter.away-corner {
+    grid-column: 1;
   }
 
   .hero {

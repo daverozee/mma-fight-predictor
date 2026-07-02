@@ -49,13 +49,14 @@ def analyze_upcoming_cards(
         )
         cards.append(card_payload)
 
-    remaining_events = [
-        event for event in events if pair_key(event["home_team"], event["away_team"]) not in consumed_pairs
-    ]
-    cards.extend(
-        analyze_odds_card_group(db, prediction_agent, group, profiles, thumbnails)
-        for group in grouped_odds_events(remaining_events)
-    )
+    if not catalog_cards:
+        remaining_events = [
+            event for event in events if pair_key(event["home_team"], event["away_team"]) not in consumed_pairs
+        ]
+        cards.extend(
+            analyze_odds_card_group(db, prediction_agent, group, profiles, thumbnails)
+            for group in grouped_odds_events(remaining_events)
+        )
     cards = sorted(cards, key=lambda card: card["sort_time"])[:limit_cards]
     for card in cards:
         enrich_card_counts(card)

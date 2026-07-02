@@ -10,6 +10,7 @@ GET /api/v1/fighters?limit=50&offset=0&search=cruz
 GET /api/v1/fighters/{fighter_id}
 POST /api/v1/predict
 POST /api/v1/agents/predict
+GET /api/v1/cards/analyze
 ```
 
 ## Predict
@@ -71,3 +72,14 @@ Response includes the standard prediction plus an analyst report:
 ```
 
 `wager_readiness` is research-only. Automated wagering should only be added through approved sportsbook integrations with user confirmation, identity, age, location, account authorization, responsible gaming limits, and audit logs.
+
+## Card Analyzer
+
+Request:
+
+```text
+GET /api/v1/cards/analyze?limit_cards=8
+```
+
+Response groups upcoming odds-feed fights by card date and includes a prediction for each fight
+where both fighters can be matched to saved profiles.

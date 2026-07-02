@@ -127,6 +127,7 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert response.status_code == 200
         assert 'href="/fighters"' in response.text
         assert 'href="/predict"' in response.text
+        assert 'href="/card-analyzer"' in response.text
         assert 'href="/dashboard"' not in response.text
         assert 'href="/tree"' not in response.text
         assert "Find a fighter" in response.text
@@ -146,6 +147,11 @@ def test_fighter_profiles_can_drive_prediction() -> None:
         assert "BestFightOdds" in response.text
         assert "not betting advice" in response.text
         assert 'target="_blank"' in response.text
+
+        response = client.get("/card-analyzer")
+        assert response.status_code == 200
+        assert "Upcoming fight card predictions" in response.text
+        assert "Card analyzer" in response.text
 
         response = client.get("/fighters?page=2&limit=10")
         assert response.status_code == 200

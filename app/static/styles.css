@@ -1938,6 +1938,150 @@ legend {
   color: var(--accent-strong);
 }
 
+.card-analyzer-band {
+  display: grid;
+}
+
+.card-analyzer-layout {
+  width: min(1120px, calc(100vw - 36px));
+  margin: 0 auto;
+  display: grid;
+  gap: 22px;
+}
+
+.fight-card-group {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.fight-card-group-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+  background: #f7faf8;
+}
+
+.fight-card-group-head h2 {
+  margin: 0;
+}
+
+.card-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.card-counts span,
+.card-fight-matchup > span,
+.card-fight-pick span,
+.card-fight-factors span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.card-counts span {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.card-fight-list {
+  display: grid;
+}
+
+.card-fight-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(190px, 0.7fr) minmax(190px, 0.8fr);
+  gap: 18px;
+  align-items: center;
+  padding: 20px 24px;
+  border-top: 1px solid var(--line);
+}
+
+.card-fight-row:first-child {
+  border-top: 0;
+}
+
+.card-fight-matchup {
+  min-width: 0;
+}
+
+.card-fight-matchup h3 {
+  margin: 8px 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.card-fight-matchup h3 em {
+  margin: 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.card-fight-matchup a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.card-fight-matchup a:hover,
+.card-fight-matchup a:focus {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+.card-fight-matchup p,
+.card-fight-pick p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.card-fight-pick {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid rgba(22, 115, 86, 0.2);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.card-fight-pick.muted {
+  border-color: var(--line);
+  background: #fbfbfa;
+}
+
+.card-fight-pick strong {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.card-fight-factors {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.card-fight-factors span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #eff5f2;
+  color: var(--accent-strong);
+}
+
 .imported-fighter-row {
   display: grid;
   grid-template-columns: 1.2fr 1.8fr 0.7fr;
@@ -2174,6 +2318,7 @@ legend {
   .ranking-source-card,
   .ranking-division-grid,
   .odds-site-grid,
+  .card-fight-row,
   .feed-overview,
   .feed-stats,
   .feed-map,
@@ -2182,6 +2327,15 @@ legend {
   .api-callout,
   .api-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fight-card-group-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .card-counts {
+    justify-content: flex-start;
   }
 
   .hero {

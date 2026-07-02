@@ -12,6 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.agents.prediction_agent import PredictionAgent
 from app.auth import authenticate_user, create_user
 from app.bout_history import fighter_bout_history
+from app.card_analyzer import analyze_upcoming_cards
 from app.career_curve import fighter_career_curve
 from app.config import get_settings
 from app.database import get_db, init_db
@@ -248,6 +249,22 @@ def odds_sites_page(request: Request, user: User = Depends(require_user)) -> HTM
     )
 
 
+@app.get("/card-analyzer", response_class=HTMLResponse)
+def card_analyzer_page(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "card_analyzer.html",
+        {
+            "user": user,
+            "card_analysis": analyze_upcoming_cards(db, prediction_agent),
+        },
+    )
+
+
 @app.get("/predict", response_class=HTMLResponse)
 def predict_page(
     request: Request,
@@ -426,6 +443,7 @@ def api_meta(db: Session = Depends(get_db)) -> dict[str, object]:
             "fighter_defeat_tree": "/api/v1/fighters/{fighter_id}/defeat-tree",
             "prediction": "/api/v1/predict",
             "agent_prediction": "/api/v1/agents/predict",
+            "card_analyzer": "/api/v1/cards/analyze",
         },
     }
 
@@ -521,6 +539,14 @@ def api_agent_predict(payload: dict[str, int], db: Session = Depends(get_db)) ->
         "agent": analysis["agent"],
         "note": "Some fighters use estimated values where complete public statistics are unavailable.",
     }
+
+
+@app.get("/api/v1/cards/analyze")
+def api_card_analyzer(
+    db: Session = Depends(get_db),
+    limit_cards: int = Query(default=8, ge=1, le=25),
+) -> dict[str, object]:
+    return analyze_upcoming_cards(db, prediction_agent, limit_cards=limit_cards)
 
 
 def sentiment_for_matchup(

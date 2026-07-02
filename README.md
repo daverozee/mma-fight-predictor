@@ -267,6 +267,7 @@ The app exposes public JSON endpoints for fighter lookup, model predictions, and
 GET /api/v1/fighters
 POST /api/v1/predict
 POST /api/v1/agents/predict
+GET /api/v1/cards/analyze
 ```
 
 See `API.md` or `/api-docs` in the running app for examples.

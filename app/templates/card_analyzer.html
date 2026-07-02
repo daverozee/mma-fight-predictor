@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head compact">
+  <p class="eyebrow">Card analyzer</p>
+  <h1>Upcoming fight card predictions</h1>
+  <p>Review upcoming MMA cards and model outlooks for each fight with enough roster coverage to analyze.</p>
+  <div class="feed-stats fighter-stats" aria-label="Card analyzer totals">
+    <div><strong>{{ card_analysis.summary.cards }}</strong><span>Cards</span></div>
+    <div><strong>{{ card_analysis.summary.fights }}</strong><span>Fights listed</span></div>
+    <div><strong>{{ card_analysis.summary.predictions }}</strong><span>Predictions ready</span></div>
+  </div>
+</section>
+
+<section class="band card-analyzer-band">
+  {% if card_analysis.cards %}
+    <div class="card-analyzer-layout">
+      {% for card in card_analysis.cards %}
+        <section class="fight-card-group">
+          <div class="fight-card-group-head">
+            <div>
+              <p class="eyebrow">{{ card.date }}</p>
+              <h2>{{ card.title }}</h2>
+            </div>
+            <div class="card-counts">
+              <span>{{ card.fight_count }} fights</span>
+              <span>{{ card.prediction_count }} analyzed</span>
+            </div>
+          </div>
+
+          <div class="card-fight-list">
+            {% for fight in card.fights %}
+              <article class="card-fight-row">
+                <div class="card-fight-matchup">
+                  <span>{{ fight.start_label }}</span>
+                  <h3>
+                    {% if fight.home_profile_id %}<a href="/fighters/{{ fight.home_profile_id }}">{{ fight.home_team }}</a>{% else %}{{ fight.home_team }}{% endif %}
+                    <em>vs</em>
+                    {% if fight.away_profile_id %}<a href="/fighters/{{ fight.away_profile_id }}">{{ fight.away_team }}</a>{% else %}{{ fight.away_team }}{% endif %}
+                  </h3>
+                  {% if fight.odds %}
+                    <p>
+                      Market avg:
+                      {{ fight.home_team }} {{ fight.odds.fighter_a_display }},
+                      {{ fight.away_team }} {{ fight.odds.fighter_b_display }}
+                      across {{ fight.odds.bookmaker_count }} books
+                    </p>
+                  {% else %}
+                    <p>Market average is not available for this fight.</p>
+                  {% endif %}
+                </div>
+
+                {% if fight.prediction_status == "ready" %}
+                  <div class="card-fight-pick">
+                    <span>Projected winner</span>
+                    <strong>{{ fight.prediction.winner }}</strong>
+                    <p>{{ (fight.prediction.confidence * 100) | round(1) }}% confidence</p>
+                  </div>
+                  <div class="card-fight-factors">
+                    {% for insight in fight.prediction.insights[:2] %}
+                      <span>{{ insight.label }}: {{ insight.advantage }}</span>
+                    {% endfor %}
+                    {% if not fight.prediction.insights %}
+                      <span>Limited measurable separation</span>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <div class="card-fight-pick muted">
+                    <span>Analysis pending</span>
+                    <strong>Profile match needed</strong>
+                    <p>Missing: {{ fight.missing_profiles | join(", ") }}</p>
+                  </div>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h2>No upcoming cards are available yet.</h2>
+      <p>Connect an odds or schedule feed, then run the import worker to populate upcoming fight cards.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

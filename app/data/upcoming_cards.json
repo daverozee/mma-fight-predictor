@@ -58,6 +58,55 @@
           "fighter_a": "King Green",
           "fighter_b": "Terrance McKinney",
           "weight_class": "Lightweight"
+        },
+        {
+          "order": 7,
+          "label": "Fight 7",
+          "fighter_a": "Luke Riley",
+          "fighter_b": "Kai Kamaka III",
+          "weight_class": "Featherweight"
+        },
+        {
+          "order": 6,
+          "label": "Fight 6",
+          "fighter_a": "Cesar Almeida",
+          "fighter_b": "Damian Pinas",
+          "weight_class": "Middleweight"
+        },
+        {
+          "order": 5,
+          "label": "Fight 5",
+          "fighter_a": "Cody Garbrandt",
+          "fighter_b": "Adrian Yanez",
+          "weight_class": "Bantamweight"
+        },
+        {
+          "order": 4,
+          "label": "Fight 4",
+          "fighter_a": "Tracy Cortez",
+          "fighter_b": "Cong Wang",
+          "weight_class": "Flyweight"
+        },
+        {
+          "order": 3,
+          "label": "Fight 3",
+          "fighter_a": "Farid Basharat",
+          "fighter_b": "Ethyn Ewing",
+          "weight_class": "Bantamweight"
+        },
+        {
+          "order": 2,
+          "label": "Fight 2",
+          "fighter_a": "Cody Durden",
+          "fighter_b": "Alessandro Costa",
+          "weight_class": "Flyweight"
+        },
+        {
+          "order": 1,
+          "label": "Fight 1",
+          "fighter_a": "Ryan Gandra",
+          "fighter_b": "Zachary Reese",
+          "weight_class": "Middleweight"
         }
       ]
     }

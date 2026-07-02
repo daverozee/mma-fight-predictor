@@ -2016,14 +2016,16 @@ legend {
 
 .main-event-stage {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 170px minmax(260px, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
+  grid-template-areas: "red center blue";
+  gap: 20px;
   align-items: stretch;
 }
 
 .main-event-fighter {
   display: grid;
-  grid-template-rows: 280px minmax(122px, auto);
+  grid-template-rows: 260px minmax(118px, auto);
+  min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 8px;
@@ -2031,11 +2033,11 @@ legend {
 }
 
 .main-event-fighter.home-corner {
-  grid-column: 1;
+  grid-area: red;
 }
 
 .main-event-fighter.away-corner {
-  grid-column: 3;
+  grid-area: blue;
 }
 
 .main-event-image {
@@ -2050,7 +2052,7 @@ legend {
 .main-event-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: top center;
 }
 
@@ -2064,7 +2066,7 @@ legend {
 .main-event-fighter a,
 .main-event-fighter strong {
   color: #f6d34e;
-  font-size: 1.45rem;
+  font-size: clamp(1.35rem, 2.2vw, 1.9rem);
   font-weight: 950;
   line-height: 1.08;
   text-decoration: none;
@@ -2086,8 +2088,7 @@ legend {
 }
 
 .main-event-vs {
-  grid-column: 2;
-  grid-row: 1;
+  grid-area: center;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -2101,7 +2102,7 @@ legend {
   text-transform: uppercase;
 }
 
-.main-event-vs strong {
+.main-event-vs > strong {
   width: 64px;
   height: 64px;
   display: grid;
@@ -2131,7 +2132,7 @@ legend {
 .main-event-pick strong,
 .main-event-market strong {
   color: #fff;
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   line-height: 1.2;
 }
 
@@ -2565,13 +2566,19 @@ legend {
   }
 
   .main-event-vs {
-    grid-column: 1;
-    grid-row: 2;
+    grid-area: center;
   }
 
   .main-event-fighter.home-corner,
   .main-event-fighter.away-corner {
-    grid-column: 1;
+    grid-column: auto;
+  }
+
+  .main-event-stage {
+    grid-template-areas:
+      "red"
+      "center"
+      "blue";
   }
 
   .hero {

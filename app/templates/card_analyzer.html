@@ -41,26 +41,20 @@
 
             {% if card.main_event %}
               <div class="main-event-stage">
-                {% for side in ["home", "away"] %}
-                  {% set fighter_name = card.main_event[side ~ "_team"] %}
-                  {% set profile_id = card.main_event[side ~ "_profile_id"] %}
-                  {% set thumbnail = card.main_event[side ~ "_thumbnail"] %}
-                  {% set record = card.main_event[side ~ "_record"] %}
-                  <article class="main-event-fighter {{ side }}-corner">
-                    <div class="main-event-image">
-                      {% if thumbnail %}<img src="{{ thumbnail }}" alt="">{% endif %}
-                    </div>
-                    <div>
-                      <span>{{ "Red corner" if side == "home" else "Blue corner" }}</span>
-                      {% if profile_id %}
-                        <a href="/fighters/{{ profile_id }}">{{ fighter_name }}</a>
-                      {% else %}
-                        <strong>{{ fighter_name }}</strong>
-                      {% endif %}
-                      {% if record %}<small>{{ record }} record</small>{% endif %}
-                    </div>
-                  </article>
-                {% endfor %}
+                <article class="main-event-fighter home-corner">
+                  <div class="main-event-image">
+                    {% if card.main_event.home_thumbnail %}<img src="{{ card.main_event.home_thumbnail }}" alt="">{% endif %}
+                  </div>
+                  <div>
+                    <span>Red corner</span>
+                    {% if card.main_event.home_profile_id %}
+                      <a href="/fighters/{{ card.main_event.home_profile_id }}">{{ card.main_event.home_team }}</a>
+                    {% else %}
+                      <strong>{{ card.main_event.home_team }}</strong>
+                    {% endif %}
+                    {% if card.main_event.home_record %}<small>{{ card.main_event.home_record }} record</small>{% endif %}
+                  </div>
+                </article>
                 <div class="main-event-vs">
                   <span>Main event</span>
                   <strong>VS</strong>
@@ -80,6 +74,20 @@
                     </div>
                   {% endif %}
                 </div>
+                <article class="main-event-fighter away-corner">
+                  <div class="main-event-image">
+                    {% if card.main_event.away_thumbnail %}<img src="{{ card.main_event.away_thumbnail }}" alt="">{% endif %}
+                  </div>
+                  <div>
+                    <span>Blue corner</span>
+                    {% if card.main_event.away_profile_id %}
+                      <a href="/fighters/{{ card.main_event.away_profile_id }}">{{ card.main_event.away_team }}</a>
+                    {% else %}
+                      <strong>{{ card.main_event.away_team }}</strong>
+                    {% endif %}
+                    {% if card.main_event.away_record %}<small>{{ card.main_event.away_record }} record</small>{% endif %}
+                  </div>
+                </article>
               </div>
               <div class="main-event-detail-strip">
                 <span>{{ card.main_event.start_label }}</span>

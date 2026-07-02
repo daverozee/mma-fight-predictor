@@ -11,11 +11,57 @@ This project is not betting advice. The model output is an experimental probabil
 - Multi-source feed adapters for fighter stats, bout history, rankings, odds movement, and recent activity
 - Normalized matchup features for size, record, finishing rates, wrestling, striking pace, and defensive metrics
 - Open JSON source catalog for importing CSV and JSON feeds with custom field mappings
-- Public JSON API for fighter lookup and matchup predictions
+- Public JSON API for fighter lookup, matchup predictions, and structured prediction-agent reports
+- Deterministic prediction agent with profile checks, career arc, sentiment, model read, data quality, and wager-readiness boundaries
 - Protected app workflow with local development and Docker support
 - MIT licensed and ready for GitHub
 
-## Run With Docker
+## Architecture At A Glance
+
+```mermaid
+flowchart LR
+  Browser["Browser / portal"] --> Web["FastAPI web service"]
+  Web --> Agent["PredictionAgent"]
+  Agent --> Model["scikit-learn predictor"]
+  Web --> DB[("Postgres")]
+  Worker["Import worker"] --> DB
+  Worker --> Sources["CSV, JSON, live APIs,\npublic image sources"]
+  Model --> Artifact["storage/model.joblib"]
+```
+
+Local Docker Compose runs three services:
+
+- `db`: Postgres for users, fighters, external features, fight results, and media rows.
+- `web`: FastAPI portal, Jinja pages, public API, prediction endpoint, and agent endpoint.
+- `worker`: scheduled data import cycle, live feed refresh, fight-result imports, and image improvement.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for full diagrams and [AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md) for the prediction-agent contract.
+
+## Fast Local Setup
+
+Windows PowerShell:
+
+```powershell
+.\scripts\setup_local.ps1
+```
+
+macOS / Linux:
+
+```bash
+sh scripts/setup_local.sh
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The setup scripts copy `.env.example` to `.env`, build/start Docker Compose, run the configured import once, and train the sample model artifact.
+
+For full setup, local Python, imports, tests, and troubleshooting, see [LOCAL_SETUP.md](LOCAL_SETUP.md).
+
+## Manual Docker Setup
 
 Copy the example environment file:
 
@@ -26,13 +72,20 @@ Copy-Item .env.example .env
 Start the app:
 
 ```powershell
-docker compose up --build
+docker compose up -d --build
 ```
 
 Compose starts `db` for Postgres, `web` for the portal, and `worker` for scheduled
 data imports.
 
 Open http://localhost:8000.
+
+Run a one-time import and train the sample model:
+
+```powershell
+docker compose exec -T web python scripts/import_data.py
+docker compose exec -T web python scripts/train_model.py
+```
 
 ## Run With Python
 
@@ -208,14 +261,24 @@ Live API records can expand the raw fighter universe before every fighter is pre
 
 ## API
 
-The app exposes public JSON endpoints for fighter lookup and model predictions:
+The app exposes public JSON endpoints for fighter lookup, model predictions, and agent reports:
 
 ```text
 GET /api/v1/fighters
 POST /api/v1/predict
+POST /api/v1/agents/predict
 ```
 
 See `API.md` or `/api-docs` in the running app for examples.
+
+## Documentation
+
+- [LOCAL_SETUP.md](LOCAL_SETUP.md): complete local setup, scripts, imports, tests, and troubleshooting.
+- [ARCHITECTURE.md](ARCHITECTURE.md): system, data, ingestion, prediction, and agent diagrams.
+- [AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md): prediction-agent contract and future wagering boundary.
+- [DATA_SOURCES.md](DATA_SOURCES.md): recommended APIs, datasets, and scraping cautions.
+- [LIVE_FEEDS.md](LIVE_FEEDS.md): live feed templates and acquisition plan.
+- [DEPLOYMENT.md](DEPLOYMENT.md): hosting notes for Render, Fly.io, Railway, and VPS-style deployments.
 
 ## Fighter Profiles
 

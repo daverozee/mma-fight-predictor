@@ -23,12 +23,22 @@ services:
         value: true
       - key: BALLDONTLIE_FIGHTS_IMPORT_ENABLED
         value: true
+      - key: BALLDONTLIE_API_KEY
+        sync: false
+      - key: BALLDONTLIE_FIGHTERS_START_CURSOR
+        sync: false
       - key: BALLDONTLIE_FIGHTS_PER_PAGE
         value: 100
       - key: BALLDONTLIE_FIGHTS_MAX_PAGES
         value: 250
       - key: BALLDONTLIE_FIGHTS_PAUSE_SECONDS
         value: 0
+      - key: THE_ODDS_API_KEY
+        sync: false
+      - key: GOOGLE_SEARCH_API_KEY
+        sync: false
+      - key: GOOGLE_SEARCH_ENGINE_ID
+        sync: false
       - key: HISTORICAL_FIGHT_RESULTS_URL
         sync: false
       - key: HISTORICAL_FIGHT_RESULTS_FORMAT
@@ -67,12 +77,22 @@ services:
         value: true
       - key: BALLDONTLIE_FIGHTS_IMPORT_ENABLED
         value: true
+      - key: BALLDONTLIE_API_KEY
+        sync: false
+      - key: BALLDONTLIE_FIGHTERS_START_CURSOR
+        sync: false
       - key: BALLDONTLIE_FIGHTS_PER_PAGE
         value: 100
       - key: BALLDONTLIE_FIGHTS_MAX_PAGES
         value: 250
       - key: BALLDONTLIE_FIGHTS_PAUSE_SECONDS
         value: 0
+      - key: THE_ODDS_API_KEY
+        sync: false
+      - key: GOOGLE_SEARCH_API_KEY
+        sync: false
+      - key: GOOGLE_SEARCH_ENGINE_ID
+        sync: false
       - key: HISTORICAL_FIGHT_RESULTS_URL
         sync: false
       - key: HISTORICAL_FIGHT_RESULTS_FORMAT

@@ -1,0 +1,65 @@
+{
+  "cards": [
+    {
+      "id": "ufc-329",
+      "title": "UFC 329 - McGregor vs. Holloway 2",
+      "promotion": "UFC",
+      "date": "2026-07-11",
+      "venue": "T-Mobile Arena",
+      "location": "Las Vegas, Nevada, United States",
+      "source_label": "UFC event page",
+      "source_url": "https://www.ufc.com/event/ufc-329",
+      "fights": [
+        {
+          "order": 14,
+          "label": "Main Event",
+          "fighter_a": "Conor McGregor",
+          "fighter_b": "Max Holloway",
+          "weight_class": "Welterweight"
+        },
+        {
+          "order": 13,
+          "label": "Fight 13",
+          "fighter_a": "Benoit Saint Denis",
+          "fighter_b": "Paddy Pimblett",
+          "weight_class": "Lightweight"
+        },
+        {
+          "order": 12,
+          "label": "Fight 12",
+          "fighter_a": "Cory Sandhagen",
+          "fighter_b": "Mario Bautista",
+          "weight_class": "Bantamweight"
+        },
+        {
+          "order": 11,
+          "label": "Fight 11",
+          "fighter_a": "Brandon Royval",
+          "fighter_b": "Lone'er Kavanagh",
+          "weight_class": "Flyweight"
+        },
+        {
+          "order": 10,
+          "label": "Fight 10",
+          "fighter_a": "Gable Steveson",
+          "fighter_b": "Elisha Ellison",
+          "weight_class": "Heavyweight"
+        },
+        {
+          "order": 9,
+          "label": "Fight 9",
+          "fighter_a": "Robert Whittaker",
+          "fighter_b": "Nikita Krylov",
+          "weight_class": "Light Heavyweight"
+        },
+        {
+          "order": 8,
+          "label": "Fight 8",
+          "fighter_a": "King Green",
+          "fighter_b": "Terrance McKinney",
+          "weight_class": "Lightweight"
+        }
+      ]
+    }
+  ]
+}

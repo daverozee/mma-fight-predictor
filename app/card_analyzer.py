@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
-from datetime import datetime, timezone
+import unicodedata
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agents.prediction_agent import PredictionAgent, implied_probability
+from app.media import thumbnail_urls_for_names
 from app.models import FighterExternalFeature, FighterProfile
 
 ODDS_SOURCE = "the-odds-api-mma-current"
 ODDS_PREFIX = "the_odds_api_mma_current_"
+UPCOMING_CARDS_PATH = Path(__file__).resolve().parent / "data" / "upcoming_cards.json"
+CARD_WINDOW_HOURS = 12
 
 
 def analyze_upcoming_cards(
@@ -20,30 +26,39 @@ def analyze_upcoming_cards(
     prediction_agent: PredictionAgent,
     limit_cards: int = 8,
     now: datetime | None = None,
+    catalog_path: Path = UPCOMING_CARDS_PATH,
 ) -> dict[str, object]:
     now = now or datetime.now(timezone.utc)
     events = upcoming_odds_events(db, now)
-    profiles = profiles_by_normalized_name(db, events)
-    cards_by_date: dict[str, dict[str, object]] = {}
+    catalog_cards = curated_cards(catalog_path, now)
+    profiles = profiles_by_normalized_name(db, events, catalog_cards)
+    thumbnails = thumbnail_urls_for_names(db, card_fighter_names(events, catalog_cards))
+    odds_by_pair = {pair_key(event["home_team"], event["away_team"]): event for event in events}
+    consumed_pairs: set[str] = set()
 
-    for event in events:
-        date_key = event["commence_at"].date().isoformat()
-        card = cards_by_date.setdefault(
-            date_key,
-            {
-                "date": date_key,
-                "title": f"MMA Card - {event['commence_at'].strftime('%b %d, %Y')}",
-                "fights": [],
-            },
+    cards = []
+    for card in catalog_cards:
+        card_payload = analyze_curated_card(
+            db,
+            prediction_agent,
+            card,
+            profiles,
+            thumbnails,
+            odds_by_pair,
+            consumed_pairs,
         )
-        fight = analyze_card_fight(db, prediction_agent, event, profiles)
-        card["fights"].append(fight)
+        cards.append(card_payload)
 
-    cards = list(cards_by_date.values())[:limit_cards]
+    remaining_events = [
+        event for event in events if pair_key(event["home_team"], event["away_team"]) not in consumed_pairs
+    ]
+    cards.extend(
+        analyze_odds_card_group(db, prediction_agent, group, profiles, thumbnails)
+        for group in grouped_odds_events(remaining_events)
+    )
+    cards = sorted(cards, key=lambda card: card["sort_time"])[:limit_cards]
     for card in cards:
-        fights = card["fights"]
-        card["fight_count"] = len(fights)
-        card["prediction_count"] = sum(1 for fight in fights if fight["prediction_status"] == "ready")
+        enrich_card_counts(card)
 
     return {
         "source": ODDS_SOURCE,
@@ -59,7 +74,7 @@ def analyze_upcoming_cards(
                 if fight["prediction_status"] != "ready"
             ),
         },
-        "cards": cards,
+        "cards": [public_card(card) for card in cards],
     }
 
 
@@ -100,6 +115,10 @@ def analyze_card_fight(
     prediction_agent: PredictionAgent,
     event: dict[str, Any],
     profiles: dict[str, FighterProfile],
+    thumbnails: dict[str, str],
+    order: int,
+    label: str | None = None,
+    weight_class: str | None = None,
 ) -> dict[str, object]:
     home = event["home_team"]
     away = event["away_team"]
@@ -112,8 +131,15 @@ def analyze_card_fight(
         "away_team": away,
         "home_profile_id": home_profile.id if home_profile else None,
         "away_profile_id": away_profile.id if away_profile else None,
+        "home_record": record_label(home_profile),
+        "away_record": record_label(away_profile),
+        "home_thumbnail": thumbnails.get(home),
+        "away_thumbnail": thumbnails.get(away),
         "commence_time": event["commence_at"].isoformat(),
         "start_label": event["commence_at"].strftime("%I:%M %p UTC").lstrip("0"),
+        "order": order,
+        "label": label or f"Fight {order}",
+        "weight_class": weight_class or "",
         "odds": odds,
     }
     if home_profile is None or away_profile is None:
@@ -139,8 +165,13 @@ def analyze_card_fight(
 def profiles_by_normalized_name(
     db: Session,
     events: list[dict[str, Any]],
+    cards: list[dict[str, Any]] | None = None,
 ) -> dict[str, FighterProfile]:
     names = {event["home_team"] for event in events} | {event["away_team"] for event in events}
+    for card in cards or []:
+        for fight in card.get("fights", []):
+            names.add(clean_name(fight.get("fighter_a")))
+            names.add(clean_name(fight.get("fighter_b")))
     profiles = db.scalars(select(FighterProfile).where(FighterProfile.name.in_(names))).all()
     found = {normalize_name(profile.name): profile for profile in profiles}
     missing = {name for name in names if normalize_name(name) not in found}
@@ -150,6 +181,149 @@ def profiles_by_normalized_name(
             if normalized in {normalize_name(name) for name in missing}:
                 found[normalized] = profile
     return found
+
+
+def analyze_curated_card(
+    db: Session,
+    prediction_agent: PredictionAgent,
+    card: dict[str, Any],
+    profiles: dict[str, FighterProfile],
+    thumbnails: dict[str, str],
+    odds_by_pair: dict[str, dict[str, Any]],
+    consumed_pairs: set[str],
+) -> dict[str, object]:
+    fights = []
+    card_date = parse_datetime(f"{card['date']}T23:00:00Z") or datetime.now(timezone.utc)
+    for fight in sorted(card.get("fights", []), key=lambda item: int(item.get("order", 0)), reverse=True):
+        fighter_a = clean_name(fight.get("fighter_a"))
+        fighter_b = clean_name(fight.get("fighter_b"))
+        key = pair_key(fighter_a, fighter_b)
+        odds_event = odds_by_pair.get(key)
+        event = {
+            "id": f"{card['id']}-{key}",
+            "home_team": fighter_a,
+            "away_team": fighter_b,
+            "commence_at": card_date,
+            "sport_title": "MMA",
+            "bookmakers": [],
+        }
+        if odds_event:
+            event["id"] = odds_event["id"]
+            event["commence_at"] = odds_event["commence_at"]
+            event["sport_title"] = odds_event["sport_title"]
+            event["bookmakers"] = odds_event["bookmakers"]
+        consumed_pairs.add(key)
+        fights.append(
+            analyze_card_fight(
+                db,
+                prediction_agent,
+                event,
+                profiles,
+                thumbnails,
+                order=int(fight.get("order", 0)),
+                label=str(fight.get("label") or ""),
+                weight_class=str(fight.get("weight_class") or ""),
+            )
+        )
+    return {
+        "id": card["id"],
+        "title": card["title"],
+        "promotion": card.get("promotion", "MMA"),
+        "date": card["date"],
+        "date_label": card_date.strftime("%b %d, %Y"),
+        "venue": card.get("venue", ""),
+        "location": card.get("location", ""),
+        "source_label": card.get("source_label", "Curated card"),
+        "source_url": card.get("source_url"),
+        "sort_time": card_date,
+        "fights": fights,
+    }
+
+
+def analyze_odds_card_group(
+    db: Session,
+    prediction_agent: PredictionAgent,
+    events: list[dict[str, Any]],
+    profiles: dict[str, FighterProfile],
+    thumbnails: dict[str, str],
+) -> dict[str, object]:
+    ordered = sorted(events, key=lambda event: event["commence_at"], reverse=True)
+    first = min(event["commence_at"] for event in events)
+    fights = [
+        analyze_card_fight(
+            db,
+            prediction_agent,
+            event,
+            profiles,
+            thumbnails,
+            order=len(ordered) - index,
+            label="Main Event" if index == 0 else f"Fight {len(ordered) - index}",
+        )
+        for index, event in enumerate(ordered)
+    ]
+    return {
+        "id": f"odds-card-{first.date().isoformat()}-{normalize_name(ordered[0]['home_team'])}",
+        "title": f"MMA Card - {first.strftime('%b %d, %Y')}",
+        "promotion": "MMA",
+        "date": first.date().isoformat(),
+        "date_label": first.strftime("%b %d, %Y"),
+        "venue": "",
+        "location": "",
+        "source_label": "Odds feed",
+        "source_url": None,
+        "sort_time": first,
+        "fights": fights,
+    }
+
+
+def grouped_odds_events(events: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    groups: list[list[dict[str, Any]]] = []
+    for event in sorted(events, key=lambda item: item["commence_at"]):
+        if not groups:
+            groups.append([event])
+            continue
+        previous_time = groups[-1][-1]["commence_at"]
+        if event["commence_at"] - previous_time <= timedelta(hours=CARD_WINDOW_HOURS):
+            groups[-1].append(event)
+        else:
+            groups.append([event])
+    return groups
+
+
+def enrich_card_counts(card: dict[str, Any]) -> None:
+    fights = card["fights"]
+    card["fight_count"] = len(fights)
+    card["prediction_count"] = sum(1 for fight in fights if fight["prediction_status"] == "ready")
+    card["main_event"] = next((fight for fight in fights if fight["label"] == "Main Event"), fights[0] if fights else None)
+
+
+def public_card(card: dict[str, Any]) -> dict[str, object]:
+    return {key: value for key, value in card.items() if key != "sort_time"}
+
+
+def curated_cards(catalog_path: Path, now: datetime) -> list[dict[str, Any]]:
+    if not catalog_path.exists():
+        return []
+    payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+    cards = []
+    for card in payload.get("cards", []):
+        card_date = parse_datetime(f"{card.get('date')}T23:59:59Z")
+        if card_date is not None and card_date.date() >= now.date():
+            cards.append(card)
+    return cards
+
+
+def card_fighter_names(
+    events: list[dict[str, Any]],
+    cards: list[dict[str, Any]],
+) -> list[str]:
+    names = []
+    for event in events:
+        names.extend([event["home_team"], event["away_team"]])
+    for card in cards:
+        for fight in card.get("fights", []):
+            names.extend([clean_name(fight.get("fighter_a")), clean_name(fight.get("fighter_b"))])
+    return names
 
 
 def fight_odds(bookmakers: list[dict[str, Any]], fighter_a: str, fighter_b: str) -> dict[str, object] | None:
@@ -212,8 +386,19 @@ def clean_name(value: object) -> str:
 
 
 def normalize_name(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]+", " ", ascii_value.lower()).strip()
 
 
 def american_odds_label(value: int | float) -> str:
     return f"+{int(value)}" if value > 0 else str(int(value))
+
+
+def pair_key(fighter_a: str, fighter_b: str) -> str:
+    return "|".join(sorted([normalize_name(fighter_a), normalize_name(fighter_b)]))
+
+
+def record_label(profile: FighterProfile | None) -> str:
+    if profile is None:
+        return ""
+    return f"{profile.wins:.0f}-{profile.losses:.0f}"

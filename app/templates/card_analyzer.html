@@ -3,7 +3,7 @@
 <section class="page-head compact">
   <p class="eyebrow">Card analyzer</p>
   <h1>Upcoming fight card predictions</h1>
-  <p>Review upcoming MMA cards and model outlooks for each fight with enough roster coverage to analyze.</p>
+  <p>Review upcoming MMA cards in fight-card order, with model picks, market context, and profile coverage for each bout.</p>
   <div class="feed-stats fighter-stats" aria-label="Card analyzer totals">
     <div><strong>{{ card_analysis.summary.cards }}</strong><span>Cards</span></div>
     <div><strong>{{ card_analysis.summary.fights }}</strong><span>Fights listed</span></div>
@@ -16,60 +16,113 @@
     <div class="card-analyzer-layout">
       {% for card in card_analysis.cards %}
         <section class="fight-card-group">
-          <div class="fight-card-group-head">
-            <div>
-              <p class="eyebrow">{{ card.date }}</p>
-              <h2>{{ card.title }}</h2>
+          <div class="fight-card-poster">
+            <div class="fight-card-titlebar">
+              <span>Fight card</span>
+              {% if card.source_url %}
+                <a href="{{ card.source_url }}" target="_blank" rel="noopener noreferrer">{{ card.source_label }}</a>
+              {% else %}
+                <span>{{ card.source_label }}</span>
+              {% endif %}
             </div>
-            <div class="card-counts">
-              <span>{{ card.fight_count }} fights</span>
-              <span>{{ card.prediction_count }} analyzed</span>
+            <div class="fight-card-poster-head">
+              <div>
+                <p class="eyebrow">{{ card.promotion }} · {{ card.date_label }}</p>
+                <h2>{{ card.title }}</h2>
+                {% if card.venue or card.location %}
+                  <p>{{ card.venue }}{% if card.venue and card.location %}, {% endif %}{{ card.location }}</p>
+                {% endif %}
+              </div>
+              <div class="card-counts">
+                <span>{{ card.fight_count }} fights</span>
+                <span>{{ card.prediction_count }} analyzed</span>
+              </div>
             </div>
+
+            {% if card.main_event %}
+              <div class="main-event-stage">
+                {% for side in ["home", "away"] %}
+                  {% set fighter_name = card.main_event[side ~ "_team"] %}
+                  {% set profile_id = card.main_event[side ~ "_profile_id"] %}
+                  {% set thumbnail = card.main_event[side ~ "_thumbnail"] %}
+                  {% set record = card.main_event[side ~ "_record"] %}
+                  <article class="main-event-fighter">
+                    {% if thumbnail %}<img src="{{ thumbnail }}" alt="">{% endif %}
+                    <div>
+                      {% if profile_id %}
+                        <a href="/fighters/{{ profile_id }}">{{ fighter_name }}</a>
+                      {% else %}
+                        <strong>{{ fighter_name }}</strong>
+                      {% endif %}
+                      {% if record %}<span>{{ record }} record</span>{% endif %}
+                    </div>
+                  </article>
+                {% endfor %}
+                <div class="main-event-vs">
+                  <span>Main event</span>
+                  <strong>VS</strong>
+                  <em>{{ card.main_event.weight_class or "MMA bout" }}</em>
+                </div>
+              </div>
+            {% endif %}
           </div>
 
-          <div class="card-fight-list">
+          <div class="fight-card-table">
+            <div class="fight-card-table-row header">
+              <span>Order</span>
+              <span>Fighters</span>
+              <span>Prediction</span>
+              <span>Market</span>
+            </div>
             {% for fight in card.fights %}
-              <article class="card-fight-row">
-                <div class="card-fight-matchup">
-                  <span>{{ fight.start_label }}</span>
-                  <h3>
-                    {% if fight.home_profile_id %}<a href="/fighters/{{ fight.home_profile_id }}">{{ fight.home_team }}</a>{% else %}{{ fight.home_team }}{% endif %}
-                    <em>vs</em>
-                    {% if fight.away_profile_id %}<a href="/fighters/{{ fight.away_profile_id }}">{{ fight.away_team }}</a>{% else %}{{ fight.away_team }}{% endif %}
-                  </h3>
-                  {% if fight.odds %}
-                    <p>
-                      Market avg:
-                      {{ fight.home_team }} {{ fight.odds.fighter_a_display }},
-                      {{ fight.away_team }} {{ fight.odds.fighter_b_display }}
-                      across {{ fight.odds.bookmaker_count }} books
-                    </p>
-                  {% else %}
-                    <p>Market average is not available for this fight.</p>
-                  {% endif %}
+              <article class="fight-card-table-row">
+                <span class="fight-order">{{ fight.label }}</span>
+                <div class="ordered-fighters">
+                  {% for side in ["home", "away"] %}
+                    {% set fighter_name = fight[side ~ "_team"] %}
+                    {% set profile_id = fight[side ~ "_profile_id"] %}
+                    {% set thumbnail = fight[side ~ "_thumbnail"] %}
+                    {% set record = fight[side ~ "_record"] %}
+                    <div class="ordered-fighter">
+                      {% if thumbnail %}<img src="{{ thumbnail }}" alt="">{% endif %}
+                      <span>
+                        {% if profile_id %}
+                          <a href="/fighters/{{ profile_id }}">{{ fighter_name }}</a>
+                        {% else %}
+                          <strong>{{ fighter_name }}</strong>
+                        {% endif %}
+                        {% if record %}<small>{{ record }}</small>{% endif %}
+                      </span>
+                    </div>
+                    {% if not loop.last %}<em class="inline-vs">vs</em>{% endif %}
+                  {% endfor %}
+                  {% if fight.weight_class %}<small>{{ fight.weight_class }}</small>{% endif %}
                 </div>
 
                 {% if fight.prediction_status == "ready" %}
-                  <div class="card-fight-pick">
-                    <span>Projected winner</span>
+                  <div class="fight-prediction-cell">
                     <strong>{{ fight.prediction.winner }}</strong>
-                    <p>{{ (fight.prediction.confidence * 100) | round(1) }}% confidence</p>
-                  </div>
-                  <div class="card-fight-factors">
-                    {% for insight in fight.prediction.insights[:2] %}
-                      <span>{{ insight.label }}: {{ insight.advantage }}</span>
-                    {% endfor %}
-                    {% if not fight.prediction.insights %}
-                      <span>Limited measurable separation</span>
+                    <span>{{ (fight.prediction.confidence * 100) | round(1) }}% confidence</span>
+                    {% if fight.prediction.insights %}
+                      <small>{{ fight.prediction.insights[0].label }} edge: {{ fight.prediction.insights[0].advantage }}</small>
                     {% endif %}
                   </div>
                 {% else %}
-                  <div class="card-fight-pick muted">
-                    <span>Analysis pending</span>
+                  <div class="fight-prediction-cell muted">
                     <strong>Profile match needed</strong>
-                    <p>Missing: {{ fight.missing_profiles | join(", ") }}</p>
+                    <span>{{ fight.missing_profiles | join(", ") }}</span>
                   </div>
                 {% endif %}
+
+                <div class="fight-market-cell">
+                  {% if fight.odds %}
+                    <strong>{{ fight.odds.fighter_a_display }} / {{ fight.odds.fighter_b_display }}</strong>
+                    <span>{{ fight.odds.bookmaker_count }} books</span>
+                  {% else %}
+                    <strong>No market average</strong>
+                    <span>Awaiting odds feed</span>
+                  {% endif %}
+                </div>
               </article>
             {% endfor %}
           </div>

@@ -8,7 +8,7 @@ from app.database import Base
 from app.models import FighterExternalFeature, FighterProfile
 
 
-def test_card_analyzer_groups_upcoming_odds_and_predicts() -> None:
+def test_card_analyzer_groups_upcoming_odds_and_predicts(tmp_path) -> None:
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
@@ -34,6 +34,7 @@ def test_card_analyzer_groups_upcoming_odds_and_predicts() -> None:
             db,
             FakePredictionAgent(),
             now=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            catalog_path=tmp_path / "empty-cards.json",
         )
 
     assert analysis["summary"] == {
@@ -48,9 +49,10 @@ def test_card_analyzer_groups_upcoming_odds_and_predicts() -> None:
     assert fight["odds"]["fighter_a"] == -160
     assert fight["odds"]["fighter_b"] == 135
     assert fight["odds"]["bookmaker_count"] == 2
+    assert analysis["cards"][0]["main_event"]["label"] == "Main Event"
 
 
-def test_card_analyzer_marks_missing_profiles() -> None:
+def test_card_analyzer_marks_missing_profiles(tmp_path) -> None:
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
@@ -70,12 +72,73 @@ def test_card_analyzer_marks_missing_profiles() -> None:
             db,
             FakePredictionAgent(),
             now=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            catalog_path=tmp_path / "empty-cards.json",
         )
 
     fight = analysis["cards"][0]["fights"][0]
     assert fight["prediction_status"] == "missing_profile"
     assert fight["missing_profiles"] == ["Unmatched Fighter"]
     assert analysis["summary"]["missing_profile_fights"] == 1
+
+
+def test_card_analyzer_prefers_curated_card_order(tmp_path) -> None:
+    catalog = tmp_path / "cards.json"
+    catalog.write_text(
+        """
+{
+  "cards": [
+    {
+      "id": "test-card",
+      "title": "Test Card",
+      "promotion": "UFC",
+      "date": "2026-07-12",
+      "venue": "Test Arena",
+      "location": "Las Vegas",
+      "fights": [
+        {"order": 10, "label": "Main Event", "fighter_a": "Fighter A", "fighter_b": "Fighter B", "weight_class": "Lightweight"},
+        {"order": 9, "label": "Fight 9", "fighter_a": "Fighter C", "fighter_b": "Fighter D", "weight_class": "Welterweight"}
+      ]
+    }
+  ]
+}
+""",
+        encoding="utf-8",
+    )
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    with Session() as db:
+        db.add_all(
+            [
+                profile("Fighter A"),
+                profile("Fighter B"),
+                profile("Fighter C"),
+                profile("Fighter D"),
+            ]
+        )
+        add_odds_event(
+            db,
+            home="Fighter B",
+            away="Fighter A",
+            commence_time="2026-07-12T02:30:00Z",
+            bookmakers="[]",
+        )
+        db.commit()
+
+        analysis = analyze_upcoming_cards(
+            db,
+            FakePredictionAgent(),
+            now=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            catalog_path=catalog,
+        )
+
+    card = analysis["cards"][0]
+    assert card["title"] == "Test Card"
+    assert [fight["label"] for fight in card["fights"]] == ["Main Event", "Fight 9"]
+    assert card["main_event"]["home_team"] == "Fighter A"
+    assert card["main_event"]["away_team"] == "Fighter B"
+    assert card["prediction_count"] == 2
 
 
 class FakePredictionAgent:
